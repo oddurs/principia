@@ -30,6 +30,7 @@ import {
   EvalBenchPrototype,
   MeridianQuantPrototype,
   HelixBioMedPrototype,
+  NexusAgentWorkflowPrototype,
 } from '../prototypes/DomainPrototypes';
 import { InlineMath } from '../primitives/manuscript/MathAndFormal';
 
@@ -432,12 +433,12 @@ export const PlatformShell: React.FC = () => {
               },
               {
                 id: 'storybook' as PlatformSection,
-                label: 'Storybook (16)',
+                label: 'Storybook (17)',
                 icon: <Layers size={12} />,
               },
               {
                 id: 'prototypes' as PlatformSection,
-                label: 'App Concepts (5)',
+                label: 'App Concepts (6)',
                 icon: <Cpu size={12} />,
               },
             ] as const
@@ -471,6 +472,7 @@ export const PlatformShell: React.FC = () => {
                   { id: 'ai-evals' as PrototypeAppId, label: 'EvalBench (AI)' },
                   { id: 'quant-macro' as PrototypeAppId, label: 'Meridian (Quant)' },
                   { id: 'biomed-trials' as PrototypeAppId, label: 'Helix (BioMed)' },
+                  { id: 'agent-workflow' as PrototypeAppId, label: 'Nexus (Agentic)' },
                   { id: 'principia' as PrototypeAppId, label: 'Principia (Physics)' },
                   { id: 'wolfram' as PrototypeAppId, label: 'Codex (CAS/IDE)' },
                 ] as const
@@ -575,6 +577,8 @@ export const PlatformShell: React.FC = () => {
             {route.prototypeId === 'quant-macro' && <MeridianQuantPrototype />}
 
             {route.prototypeId === 'biomed-trials' && <HelixBioMedPrototype />}
+
+            {route.prototypeId === 'agent-workflow' && <NexusAgentWorkflowPrototype />}
 
             {route.prototypeId === 'principia' && (
               <PrincipiaApp

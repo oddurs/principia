@@ -69,6 +69,12 @@ import {
   Accordion,
   DataTable,
 } from '../primitives/general/GeneralFoundation';
+import {
+  AgentPipelineGraph,
+  ToolCallCard,
+  AgentTraceTimeline,
+  HumanApprovalGate,
+} from '../primitives/agentic/AgenticWorkflow';
 
 export interface StorybookPageProps {
   activeStory: StoryComponentId;
@@ -599,6 +605,52 @@ const STORY_CATALOG: StoryMeta[] = [
       { prop: 'verifiedBadge', type: 'string', defaultVal: "'SymPy CAS Verified'", description: 'Displays epistemic verification status of symbolic claims.' },
     ],
   },
+  {
+    id: 'agentic-workflow',
+    num: '17',
+    title: 'Agentic Workflow & Orchestration',
+    exports: ['AgentPipelineGraph', 'ToolCallCard', 'AgentTraceTimeline', 'HumanApprovalGate'],
+    pillar: 'Compute & Copilot',
+    summary:
+      'Multi-agent DAG orchestration topology, MCP / sandbox tool-call inspectors, chronological reasoning & formal verifier trace waterfalls, and human-in-the-loop ChangeSet approval gates.',
+    anatomyNotes: [
+      'AgentPipelineGraph renders an interactive topological DAG with parallel subagent lanes, Bézier directional connectors, live token/latency telemetry, and click-to-inspect node focus.',
+      'AgentTraceTimeline combines Chain-of-Thought reasoning, MCP tool invocations, subagent handoffs, and Lean 4 / SymPy verifier checks with proportional latency bars and 1-click Fork replay.',
+      'HumanApprovalGate enforces explicit operator sign-off with capability scope chips, risk badges, and unified diff inspection before mutating state.',
+    ],
+    scenarios: [
+      { id: 'dag-pipeline', label: 'Multi-Agent DAG Topology' },
+      { id: 'trace-tools', label: 'Trace Waterfall & MCP Tool Calls' },
+      { id: 'human-gate', label: 'Human-in-the-Loop Approval Gate' },
+    ],
+    jsxSnippet: `import {
+  AgentPipelineGraph,
+  ToolCallCard,
+  AgentTraceTimeline,
+  HumanApprovalGate,
+} from '@principia/core';
+
+<AgentPipelineGraph
+  nodes={pipelineNodes}
+  edges={pipelineEdges}
+  selectedNodeId={selectedNode}
+  onSelectNode={setSelectedNode}
+/>
+<HumanApprovalGate
+  gateId="GATE-402"
+  agentName="Synthesizer & Patcher"
+  actionTitle="Commit Verified Lean 4 Corollary & Manuscript Patch"
+  riskLevel="medium"
+  scopesRequested={['fs.write:src/manuscript', 'git.commit:branch/lean-proof']}
+  payloadPreview={diffString}
+/>`,
+    propsSpec: [
+      { prop: 'nodes / edges (AgentPipelineGraph)', type: 'AgentPipelineNode[] / AgentPipelineEdge[]', defaultVal: 'required', description: 'Topological column/row nodes and directed Bézier edges for multi-agent orchestration.' },
+      { prop: 'steps (AgentTraceTimeline)', type: 'AgentTraceStep[]', defaultVal: 'required', description: 'Chronological reasoning, tool-call, subagent, and formal verifier steps with latency waterfall bars.' },
+      { prop: 'toolName / server (ToolCallCard)', type: 'string', defaultVal: 'required', description: 'MCP tool identifier, server badge, JSON input arguments, and diff/payload preview.' },
+      { prop: 'riskLevel / decision (HumanApprovalGate)', type: "'low' | 'medium' | 'high'", defaultVal: "'pending'", description: 'Human-in-the-loop governance gate with Approve & Execute (⌘↵) and Hold / Reject actions.' },
+    ],
+  },
 ];
 
 export const StorybookPage: React.FC<StorybookPageProps> = ({
@@ -643,6 +695,8 @@ export const StorybookPage: React.FC<StorybookPageProps> = ({
   const [formSwitchA, setFormSwitchA] = useState<boolean>(true);
   const [formSwitchB, setFormSwitchB] = useState<boolean>(false);
   const [selectedTableRowId, setSelectedTableRowId] = useState<string>('claude-4-sonnet');
+  const [selectedAgentNode, setSelectedAgentNode] = useState<string>('verifier');
+  const [storyGateDecision, setStoryGateDecision] = useState<'pending' | 'approved' | 'rejected'>('pending');
 
   const currentIndex = Math.max(
     0,
@@ -2272,8 +2326,167 @@ export const StorybookPage: React.FC<StorybookPageProps> = ({
                   </div>
                 )}
 
-                {/* STORY 12: Grounded AI Copilot */}
+                {/* STORY 16: Grounded AI Copilot */}
                 {activeStory === 'grounded-ai' && <GroundedAIChat />}
+
+                {/* STORY 17: Agentic Workflow & Orchestration */}
+                {activeStory === 'agentic-workflow' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    {activeScenarioId === 'trace-tools' ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                        <ToolCallCard
+                          toolName="mcp.lean4.verify_proof_obligation"
+                          server="lean4-kernel-v4.12"
+                          status="success"
+                          durationMs={640}
+                          diffMode
+                          argsJson={JSON.stringify(
+                            {
+                              theorem: 'lyapunov_spectral_contraction',
+                              assumptions: ['zeta > 0', 'omega_0 > 0'],
+                              tactic_timeout_ms: 2000,
+                            },
+                            null,
+                            2
+                          )}
+                          outputPreview={`+ theorem lyapunov_spectral_contraction (ζ ω₀ : ℝ) (hζ : 0 < ζ) (hω : 0 < ω₀) :\n+   ∀ t ≥ 0, deriv H t = -2 * ζ * ω₀ * (p t)^2 ∧ deriv H t ≤ 0 := by\n+   intro t ht; nlinarith [sq_nonneg (p t)]\n✓ Goals accomplished (0 sorry, kernel typecheck passed in 640 ms)`}
+                        />
+                        <AgentTraceTimeline
+                          steps={[
+                            {
+                              id: 'st-1',
+                              stepNum: 1,
+                              kind: 'reasoning',
+                              agentRole: 'Orchestrator Planner',
+                              title: 'Decompose Lyapunov Stability Proof & Symbolic Check',
+                              detail:
+                                'Partitioning task into two parallel subagents: (1) SymPy symbolic Jacobian eigenvalue verification and (2) Lean 4 formal tactic synthesis.',
+                              durationMs: 380,
+                              tokens: 610,
+                              status: 'completed',
+                            },
+                            {
+                              id: 'st-2',
+                              stepNum: 2,
+                              kind: 'subagent',
+                              agentRole: 'SymPy CAS Worker',
+                              title: 'Spawn Isolated CAS Sandbox & Compute Hurwitz Determinants',
+                              detail:
+                                'Dispatched subagent to verify trace(J) = -2ζω₀ < 0 and det(J) = ω₀² > 0 across ℝ⁺.',
+                              codeOrPayload: `sympy.simplify(H.diff(t)) -> -2*zeta*omega_0*p**2 <= 0 [VERIFIED]`,
+                              durationMs: 520,
+                              tokens: 940,
+                              status: 'verified',
+                            },
+                            {
+                              id: 'st-3',
+                              stepNum: 3,
+                              kind: 'verifier',
+                              agentRole: 'Lean 4 Formal Verifier',
+                              title: 'Discharge Non-Linear Arithmetic Obligation via nlinarith',
+                              detail:
+                                'Zero-residual proof term accepted by the Lean 4 kernel with zero sorry axioms.',
+                              durationMs: 640,
+                              tokens: 1120,
+                              status: 'verified',
+                            },
+                          ]}
+                        />
+                      </div>
+                    ) : activeScenarioId === 'human-gate' ? (
+                      <HumanApprovalGate
+                        gateId="GATE-402"
+                        agentName="Synthesizer & Patcher"
+                        actionTitle="Commit Verified Lean 4 Corollary & Manuscript Patch"
+                        rationale="Both SymPy CAS equivalence and Lean 4 kernel verification succeeded with 0 unresolved obligations. Requesting operator sign-off to write Corollary 2.1.3 into the primary manuscript."
+                        riskLevel="medium"
+                        scopesRequested={[
+                          'fs.write:src/manuscript/ch2.tex',
+                          'git.commit:branch/lean-verified',
+                          'cas.cert:sha256-9f8a2b',
+                        ]}
+                        payloadPreview={`@@ -142,4 +142,10 @@\n \\begin{corollary}[Exponential Phase-Volume Contraction]\n+  For any underdamped trajectory with $\\zeta \\in (0,1)$, the symplectic phase volume\n+  contracts at the exact rate $\\Omega(t) = \\Omega(0)\\exp(-2\\zeta\\omega_0 t)$.\n \\end{corollary}`}
+                        decision={storyGateDecision}
+                        onApprove={() => setStoryGateDecision('approved')}
+                        onReject={() => setStoryGateDecision('rejected')}
+                      />
+                    ) : (
+                      <AgentPipelineGraph
+                        selectedNodeId={selectedAgentNode}
+                        onSelectNode={setSelectedAgentNode}
+                        nodes={[
+                          {
+                            id: 'planner',
+                            role: 'ORCHESTRATOR',
+                            title: 'Task Decomposer',
+                            model: 'claude-4-opus',
+                            status: 'completed',
+                            tokensUsed: 1240,
+                            latencyMs: 410,
+                            column: 0,
+                            row: 0,
+                            summary: 'Decomposes research goal into symbolic & formal sub-tasks.',
+                          },
+                          {
+                            id: 'sympy-worker',
+                            role: 'SUBAGENT · CAS',
+                            title: 'SymPy Symbolic Solver',
+                            model: 'o3-mini-high',
+                            status: 'completed',
+                            tokensUsed: 2180,
+                            latencyMs: 680,
+                            column: 1,
+                            row: 0,
+                            summary: 'Derives exact Green’s kernel & Hurwitz stability bounds.',
+                          },
+                          {
+                            id: 'lit-worker',
+                            role: 'SUBAGENT · RAG',
+                            title: 'ArXiv Citation Grounder',
+                            model: 'gemini-2.5-pro',
+                            status: 'completed',
+                            tokensUsed: 1890,
+                            latencyMs: 540,
+                            column: 1,
+                            row: 1,
+                            summary: 'Cross-checks theorem numbering against Arnold (1989).',
+                          },
+                          {
+                            id: 'verifier',
+                            role: 'VERIFIER',
+                            title: 'Lean 4 Proof Kernel',
+                            model: 'lean4-v4.12',
+                            status: 'running',
+                            tokensUsed: 3420,
+                            latencyMs: 890,
+                            column: 2,
+                            row: 0,
+                            summary: 'Discharging tactic obligations for Lyapunov contraction.',
+                          },
+                          {
+                            id: 'gate',
+                            role: 'GOVERNANCE',
+                            title: 'Human Approval Gate',
+                            model: 'operator-signoff',
+                            status: 'awaiting-approval',
+                            tokensUsed: 320,
+                            latencyMs: 120,
+                            column: 3,
+                            row: 0,
+                            summary: 'Awaiting operator ⌘↵ approval to commit manuscript patch.',
+                          },
+                        ]}
+                        edges={[
+                          { from: 'planner', to: 'sympy-worker', label: 'ODE AST', active: true },
+                          { from: 'planner', to: 'lit-worker', label: 'BibTeX Keys', active: true },
+                          { from: 'sympy-worker', to: 'verifier', label: 'LHS-RHS=0', active: true },
+                          { from: 'lit-worker', to: 'verifier', label: 'Citations', active: true },
+                          { from: 'verifier', to: 'gate', label: 'Q.E.D. Cert', active: true },
+                        ]}
+                      />
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>

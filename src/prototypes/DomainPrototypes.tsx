@@ -1,5 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import { Pod } from '../primitives/pod/Pod';
+import {
+  AgentPipelineGraph,
+  ToolCallCard,
+  AgentTraceTimeline,
+  HumanApprovalGate,
+  AgentPipelineNode,
+} from '../primitives/agentic/AgenticWorkflow';
 import { Scrubber } from '../primitives/compute/Manipulate';
 import {
   InlineMath,
@@ -1381,6 +1388,697 @@ export const HelixBioMedPrototype: React.FC = () => {
                 text: 'Confidence intervals calculated via profile likelihood in stratified Cox regression.',
               },
             ]}
+          />
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+/* ========================================================================== */
+/* PROTOTYPE 4: NEXUS — AGENTIC WORKFLOW & MULTI-AGENT ORCHESTRATOR           */
+/* ========================================================================== */
+
+interface AgentRunLedgerRow {
+  id: string;
+  runId: string;
+  mission: string;
+  subagents: number;
+  toolCalls: number;
+  verifierPassRate: number;
+  tokensK: number;
+  durationSec: number;
+  gateStatus: 'Approved' | 'Awaiting Gate' | 'Auto-Verified';
+}
+
+const AGENT_RUN_LEDGER: AgentRunLedgerRow[] = [
+  {
+    id: 'run-1',
+    runId: 'wf-984b-lean',
+    mission: 'Formalize Spectral Gap Bound in Lean 4 + Mathlib',
+    subagents: 5,
+    toolCalls: 18,
+    verifierPassRate: 100.0,
+    tokensK: 42.8,
+    durationSec: 19.4,
+    gateStatus: 'Awaiting Gate',
+  },
+  {
+    id: 'run-2',
+    runId: 'wf-981a-perf',
+    mission: 'SIMD Vectorize Symplectic RK4 Kernel & Run Criterion',
+    subagents: 4,
+    toolCalls: 14,
+    verifierPassRate: 100.0,
+    tokensK: 31.2,
+    durationSec: 14.8,
+    gateStatus: 'Approved',
+  },
+  {
+    id: 'run-3',
+    runId: 'wf-979c-lit',
+    mission: 'Harvest & Audit 42 ArXiv Papers on Diffusion Bridges',
+    subagents: 6,
+    toolCalls: 29,
+    verifierPassRate: 96.4,
+    tokensK: 68.5,
+    durationSec: 28.1,
+    gateStatus: 'Auto-Verified',
+  },
+  {
+    id: 'run-4',
+    runId: 'wf-975d-sql',
+    mission: 'Synthesize Idempotent Ledger Migration & Property Tests',
+    subagents: 4,
+    toolCalls: 11,
+    verifierPassRate: 100.0,
+    tokensK: 24.0,
+    durationSec: 11.2,
+    gateStatus: 'Approved',
+  },
+];
+
+export const NexusAgentWorkflowPrototype: React.FC = () => {
+  const [missionPreset, setMissionPreset] = useState<'lean-proof' | 'code-patch' | 'lit-harvest'>('lean-proof');
+  const [activeStageIdx, setActiveStageIdx] = useState<number>(3);
+  const [selectedNodeId, setSelectedNodeId] = useState<string>('critic-gate');
+  const [maxParallel, setMaxParallel] = useState<number>(4);
+  const [confidenceThreshold, setConfidenceThreshold] = useState<number>(0.92);
+  const [gateDecision, setGateDecision] = useState<'pending' | 'approved' | 'rejected'>('pending');
+
+  const pipelineNodes: AgentPipelineNode[] = useMemo(() => {
+    const getStatus = (col: number, isGate = false) => {
+      if (gateDecision === 'approved') return 'completed';
+      if (gateDecision === 'rejected' && col >= 2) return 'failed';
+      if (col < activeStageIdx) return 'completed';
+      if (col === activeStageIdx) return isGate ? 'awaiting-approval' : 'running';
+      return 'queued';
+    };
+
+    if (missionPreset === 'code-patch') {
+      return [
+        {
+          id: 'planner',
+          role: 'Lead Architect',
+          title: '1. AST & Bottleneck Planner',
+          model: 'principia-r3',
+          status: getStatus(0),
+          tokensUsed: 6400,
+          latencyMs: 2100,
+          column: 0,
+          row: 0,
+          summary: 'Decomposes hot-loop allocation bottlenecks across 4 modules and assigns isolated git worktrees.',
+        },
+        {
+          id: 'retriever',
+          role: 'Codebase Researcher',
+          title: '2A. Call-Graph & Type Indexer',
+          model: 'principia-flash',
+          status: getStatus(1),
+          tokensUsed: 8200,
+          latencyMs: 1850,
+          column: 1,
+          row: 0,
+          summary: 'Maps all references to RK4Integrator::step and extracts zero-copy Float64Array invariants.',
+        },
+        {
+          id: 'prover',
+          role: 'Patch Synthesizer',
+          title: '2B. Worktree Patch Generator',
+          model: 'principia-r3',
+          status: getStatus(1),
+          tokensUsed: 14900,
+          latencyMs: 4600,
+          column: 1,
+          row: 1,
+          summary: 'Synthesizes unrolled 4-stage symplectic integrator in isolated branch worktree.',
+        },
+        {
+          id: 'sandbox',
+          role: 'Verification Runner',
+          title: '3. Criterion & Property Test Suite',
+          model: 'sandbox-bun',
+          status: getStatus(2),
+          tokensUsed: 4100,
+          latencyMs: 3200,
+          column: 2,
+          row: 0,
+          summary: 'Executes 1,000 randomized Hamiltonian conservation property tests (+2.84x throughput speedup).',
+        },
+        {
+          id: 'critic-gate',
+          role: 'Governance Gate',
+          title: '4. ChangeSet Approval Gate',
+          model: 'human-gate',
+          status: getStatus(3, true),
+          tokensUsed: 1900,
+          latencyMs: 650,
+          column: 3,
+          row: 0,
+          summary: 'Holds merge to main until operator verifies zero regression in energy drift ΔE/E₀ < 10⁻¹².',
+        },
+      ];
+    }
+
+    if (missionPreset === 'lit-harvest') {
+      return [
+        {
+          id: 'planner',
+          role: 'Field Strategist',
+          title: '1. Seed Citation Expander',
+          model: 'principia-r3',
+          status: getStatus(0),
+          tokensUsed: 7800,
+          latencyMs: 2400,
+          column: 0,
+          row: 0,
+          summary: 'Expands 8 seed papers across 2-hop citation graph and ranks by SPECTER2 embedding cosine similarity.',
+        },
+        {
+          id: 'retriever',
+          role: 'LaTeX Extractor',
+          title: '2A. ArXiv TeX Source Parser',
+          model: 'principia-flash',
+          status: getStatus(1),
+          tokensUsed: 19400,
+          latencyMs: 3900,
+          column: 1,
+          row: 0,
+          summary: 'Extracts theorem environments, assumptions, and empirical tables directly from ArXiv e-print tarballs.',
+        },
+        {
+          id: 'prover',
+          role: 'Claim Auditor',
+          title: '2B. Exact-Quote Grounding Judge',
+          model: 'principia-r3',
+          status: getStatus(1),
+          tokensUsed: 16200,
+          latencyMs: 5100,
+          column: 1,
+          row: 1,
+          summary: 'Cross-checks every extracted assertion against verbatim passage spans with zero hallucination tolerance.',
+        },
+        {
+          id: 'sandbox',
+          role: 'Meta-Analysis Engine',
+          title: '3. Effect-Size Reconciliation',
+          model: 'sympy-cas',
+          status: getStatus(2),
+          tokensUsed: 8400,
+          latencyMs: 2900,
+          column: 2,
+          row: 0,
+          summary: 'Normalizes reported perplexity & pass@1 metrics across 42 papers to a unified compute-matched scale.',
+        },
+        {
+          id: 'critic-gate',
+          role: 'Publication Gate',
+          title: '4. Dossier Commit Gate',
+          model: 'human-gate',
+          status: getStatus(3, true),
+          tokensUsed: 3100,
+          latencyMs: 920,
+          column: 3,
+          row: 0,
+          summary: 'Awaits principal investigator sign-off before committing 18 verified claims to the field ledger.',
+        },
+      ];
+    }
+
+    // Default: lean-proof
+    return [
+      {
+        id: 'planner',
+        role: 'Orchestrator Agent',
+        title: '1. Conjecture Decomposer',
+        model: 'principia-r3',
+        status: getStatus(0),
+        tokensUsed: 7200,
+        latencyMs: 2300,
+        column: 0,
+        row: 0,
+        summary: 'Splits the spectral gap theorem into 3 orthogonal lemmas and dispatches parallel subagents.',
+      },
+      {
+        id: 'retriever',
+        role: 'Mathlib Retriever',
+        title: '2A. Premise & Lemma Search',
+        model: 'principia-flash',
+        status: getStatus(1),
+        tokensUsed: 9400,
+        latencyMs: 1950,
+        column: 1,
+        row: 0,
+        summary: 'Retrieves 14 relevant self-adjoint operator lemmas from Mathlib4 via semantic type-signature search.',
+      },
+      {
+        id: 'prover',
+        role: 'Formal Prover Agent',
+        title: '2B. Lean 4 Tactic Synthesizer',
+        model: 'principia-r3',
+        status: getStatus(1),
+        tokensUsed: 18600,
+        latencyMs: 6400,
+        column: 1,
+        row: 1,
+        summary: 'Generates tactic proof tree using linarith, positivity, and MeasureTheory.integral_mono.',
+      },
+      {
+        id: 'sandbox',
+        role: 'Kernel Verifier',
+        title: '3. Lean 4 + SymPy Equivalence',
+        model: 'lean4-kernel',
+        status: getStatus(2),
+        tokensUsed: 5200,
+        latencyMs: 2800,
+        column: 2,
+        row: 0,
+        summary: 'Compiles full proof term with zero sorry axioms and verifies symbolic asymptotic residue in SymPy.',
+      },
+      {
+        id: 'critic-gate',
+        role: 'Governance Gate',
+        title: '4. Monograph Commit Gate',
+        model: 'human-gate',
+        status: getStatus(3, true),
+        tokensUsed: 2400,
+        latencyMs: 780,
+        column: 3,
+        row: 0,
+        summary: 'Stages Theorem 4.2 and machine-checked proof block for insertion into the manuscript ledger.',
+      },
+    ];
+  }, [missionPreset, activeStageIdx, gateDecision]);
+
+  const pipelineEdges = useMemo(
+    () => [
+      { from: 'planner', to: 'retriever', label: 'spawn', active: activeStageIdx >= 1 },
+      { from: 'planner', to: 'prover', label: 'spawn', active: activeStageIdx >= 1 },
+      { from: 'retriever', to: 'sandbox', label: '14 lemmas', active: activeStageIdx >= 2 },
+      { from: 'prover', to: 'sandbox', label: 'proof AST', active: activeStageIdx >= 2 },
+      { from: 'sandbox', to: 'critic-gate', label: 'exit 0 ✓', active: activeStageIdx >= 3 },
+    ],
+    [activeStageIdx]
+  );
+
+  const selectedNode =
+    pipelineNodes.find((n) => n.id === selectedNodeId) ?? pipelineNodes[0];
+
+  const traceSteps = useMemo(
+    () => [
+      {
+        id: 'st-1',
+        stepNum: 1,
+        kind: 'reasoning' as const,
+        agentRole: 'Orchestrator Agent',
+        title: 'Decompose target theorem into sub-goals & assign subagent worktrees',
+        detail: `Partitioned dissipative spectral bound into (i) coercive quadratic form lemma and (ii) compact resolvent trace inequality with confidence threshold τ ≥ ${confidenceThreshold.toFixed(2)}.`,
+        durationMs: 840,
+        tokens: 1420,
+        status: 'completed' as const,
+      },
+      {
+        id: 'st-2',
+        stepNum: 2,
+        kind: 'subagent' as const,
+        agentRole: 'Parallel Dispatch (2 Subagents)',
+        title: 'Invoke Mathlib Retriever & Lean 4 Tactic Synthesizer concurrently',
+        detail: `Spawned ${maxParallel} parallel worker threads across isolated git worktrees with read-only MCP access to Mathlib4 and ArXiv.`,
+        durationMs: 1120,
+        tokens: 2680,
+        status: 'completed' as const,
+      },
+      {
+        id: 'st-3',
+        stepNum: 3,
+        kind: 'tool-call' as const,
+        agentRole: 'Formal Prover Agent',
+        title: 'mcp://lean4-lsp/check_proof_state',
+        detail: 'Submitted 28-line tactic script to Lean 4.14.0 language server; discharged all 3 remaining subgoals with zero sorry axioms.',
+        codeOrPayload: `theorem damped_energy_decay (ζ ω₀ : ℝ) (hζ : 0 < ζ) (hω : 0 < ω₀) :\n    deriv (fun t => E t) t = -2 * ζ * ω₀ * (deriv x t)^2 := by\n  unfold E; ring_nf; linarith [hζ, hω]\n-- Lean 4 Kernel: Goals accomplished! (0 sorry, 284ms)`,
+        durationMs: 2180,
+        tokens: 4920,
+        status: 'verified' as const,
+      },
+      {
+        id: 'st-4',
+        stepNum: 4,
+        kind: 'verifier' as const,
+        agentRole: 'Kernel Verifier',
+        title: 'Symbolic CAS & Property Equivalence Audit Passed',
+        detail: 'Cross-checked symbolic Lyapunov derivative against 10,000 randomized Float64 phase-space states; max residual |ΔR| = 1.42e-16.',
+        durationMs: 960,
+        tokens: 1840,
+        status: 'verified' as const,
+      },
+    ],
+    [confidenceThreshold, maxParallel]
+  );
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: 'calc(100vh - 52px)' }}>
+      {/* App Concept Sub-Bar */}
+      <div
+        className="ads-ui"
+        style={{
+          minHeight: '44px',
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '12px',
+          padding: '8px 28px',
+          backgroundColor: 'var(--ads-paper-well, #F7F5F0)',
+          borderBottom: '1px solid var(--ads-ink-hairline, #E4E2DC)',
+          fontSize: '12px',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          <Badge tone="compute" dot>
+            APP CONCEPT 04 · AGENTIC WORKFLOW
+          </Badge>
+          <strong style={{ fontSize: '13.5px', color: 'var(--ads-ink-carbon)' }}>
+            Nexus · Multi-Agent DAG, Verifier Trace &amp; Governance Control Plane
+          </strong>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '11.5px', color: 'var(--ads-ink-graphite)' }}>
+              Max Subagents:
+            </span>
+            <Scrubber
+              value={maxParallel}
+              min={1}
+              max={8}
+              step={1}
+              unit="agents"
+              onChange={setMaxParallel}
+            />
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '11.5px', color: 'var(--ads-ink-graphite)' }}>
+              Verifier Gate τ:
+            </span>
+            <Scrubber
+              value={confidenceThreshold}
+              min={0.75}
+              max={0.99}
+              step={0.01}
+              onChange={setConfidenceThreshold}
+            />
+          </div>
+
+          <SegmentedControl
+            value={missionPreset}
+            onChange={(val) => {
+              setMissionPreset(val);
+              setGateDecision('pending');
+              setActiveStageIdx(3);
+            }}
+            options={[
+              { id: 'lean-proof', label: 'Lean 4 Theorem Prover' },
+              { id: 'code-patch', label: 'Codebase Worktree Patch' },
+              { id: 'lit-harvest', label: 'ArXiv Citation Harvest' },
+            ]}
+          />
+        </div>
+      </div>
+
+      {/* Main Workspace Container */}
+      <div
+        style={{
+          maxWidth: '1360px',
+          width: '100%',
+          margin: '0 auto',
+          padding: '28px 32px 64px 32px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '24px',
+        }}
+      >
+        {/* 4-Column Agentic Telemetry Strip */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+            gap: '18px',
+          }}
+        >
+          <MetricCard
+            label="Active Subagent Fleet"
+            value={`${maxParallel}`}
+            unit="isolated worktrees"
+            delta="Zero Lock Contention"
+            deltaTrend="up"
+            sparklineData={[2, 3, 4, 4, 5, maxParallel]}
+            sparklineColor="oklch(0.45 0.15 255)"
+            footnote="Each subagent runs in an ephemeral git worktree + sandbox"
+          />
+          <MetricCard
+            label="Formal Verifier Pass Rate"
+            value="100.0%"
+            unit="Lean 4 + SymPy"
+            delta="0 sorry axioms"
+            deltaTrend="up"
+            sparklineData={[91.2, 94.5, 97.0, 98.8, 100.0, 100.0]}
+            sparklineColor="oklch(0.46 0.14 160)"
+            footnote={`Gated at epistemic confidence threshold τ ≥ ${confidenceThreshold.toFixed(2)}`}
+          />
+          <MetricCard
+            label="End-to-End DAG Latency"
+            value="14.1"
+            unit="sec"
+            delta="-38% via Parallel"
+            deltaTrend="up"
+            sparklineData={[24.5, 21.0, 18.4, 16.2, 15.0, 14.1]}
+            sparklineColor="oklch(0.48 0.18 32)"
+            footnote="42.8k total reasoning + tool-call tokens consumed"
+          />
+          <MetricCard
+            label="Human Governance State"
+            value={
+              gateDecision === 'approved'
+                ? 'Committed'
+                : gateDecision === 'rejected'
+                ? 'Held'
+                : 'Awaiting Gate'
+            }
+            unit="ADR-0043"
+            delta={gateDecision === 'approved' ? 'Merged ✓' : '1 ChangeSet Pending'}
+            deltaTrend={gateDecision === 'rejected' ? 'down' : 'up'}
+            sparklineData={[1, 1, 2, 1, 1, gateDecision === 'approved' ? 0 : 1]}
+            sparklineColor="oklch(0.48 0.16 310)"
+            footnote="No autonomous mutation occurs without explicit gate sign-off"
+          />
+        </div>
+
+        {/* Interactive Multi-Agent DAG Pipeline Pod */}
+        <Pod
+          title="1. Multi-Agent Directed Acyclic Execution Graph (Click Any Agent Node to Inspect)"
+          subtitle="Topological orchestration across Planner, Parallel Retriever/Synthesizer Subagents, Kernel Verifier, and Human Governance Gate"
+          domainTag="AI-VERIFIED"
+          cellLabel="DAG[1]="
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '10px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <Badge tone="reference">Selected Node: {selectedNode.title}</Badge>
+                <span style={{ fontSize: '12.5px', color: 'var(--ads-ink-graphite)' }}>
+                  {selectedNode.summary}
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Button
+                  variant="secondary"
+                  size="xs"
+                  onClick={() => {
+                    setGateDecision('pending');
+                    setActiveStageIdx((i) => (i + 1) % 4);
+                  }}
+                >
+                  Step Pipeline Stage ({activeStageIdx + 1}/4) ▸
+                </Button>
+                <Button
+                  variant="tonal"
+                  size="xs"
+                  onClick={() => {
+                    setActiveStageIdx(3);
+                    setGateDecision('pending');
+                  }}
+                >
+                  Reset to Gate
+                </Button>
+              </div>
+            </div>
+
+            <AgentPipelineGraph
+              nodes={pipelineNodes}
+              edges={pipelineEdges}
+              selectedNodeId={selectedNodeId}
+              onSelectNode={setSelectedNodeId}
+            />
+          </div>
+        </Pod>
+
+        {/* 2-Column Split: Chronological Reasoning/Tool Trace + Human Approval Gate */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(460px, 1fr))',
+            gap: '22px',
+            alignItems: 'start',
+          }}
+        >
+          <Card
+            title="2. Chronological Agent Reasoning, Subagent & Tool-Call Trace"
+            subtitle="Every thought, MCP tool invocation, and formal kernel verification step with proportional latency bars"
+            headerRight={<Badge tone="success" dot>4 Steps Verified</Badge>}
+          >
+            <AgentTraceTimeline
+              steps={traceSteps}
+              onReplayFromStep={(stepNum) => {
+                setActiveStageIdx(Math.max(0, stepNum - 1));
+                setGateDecision('pending');
+              }}
+            />
+          </Card>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+            <Card
+              title="3. Human-in-the-Loop Governance & ChangeSet Gate"
+              subtitle="Propose changes as a verifiable ChangeSet — a person applies the ChangeSet, or holds it"
+            >
+              <HumanApprovalGate
+                gateId="GATE-0043"
+                agentName="Formal Prover Agent (principia-r3)"
+                actionTitle={
+                  missionPreset === 'code-patch'
+                    ? 'Merge Unrolled Symplectic RK4 Kernel into src/core/integrator.ts'
+                    : missionPreset === 'lit-harvest'
+                    ? 'Commit 18 Grounded Literature Assertions to Field Ledger'
+                    : 'Insert Machine-Checked Theorem 4.2 & Lean 4 Proof into Manuscript'
+                }
+                rationale="All 3 formal verification gates (Lean 4.14.0 typechecker, SymPy asymptotic residue check, and 10,000-trial invariant test suite) exited with code 0."
+                riskLevel="medium"
+                scopesRequested={['manuscript:propose', 'lean4:verify', 'ledger:commit']}
+                payloadPreview={`@@ -142,4 +142,11 @@ section SpectralDissipation\n+ @[VerifiedBy "Lean 4.14.0 + SymPy 1.13"]\n+ theorem damped_energy_contraction (ζ ω₀ : ℝ) (hζ : ζ > 0) :\n+   ∀ t ≥ 0, E(t) ≤ E(0) * Real.exp (-2 * ζ * ω₀ * t) := by\n+   exact symplectic_lyapunov_bound ζ ω₀ hζ`}
+                decision={gateDecision}
+                onApprove={() => setGateDecision('approved')}
+                onReject={() => setGateDecision('rejected')}
+              />
+            </Card>
+
+            <Card
+              title="4. Latest Sandbox MCP Tool Invocation"
+              subtitle="Click to expand/collapse structured JSON input arguments and return diff"
+            >
+              <ToolCallCard
+                toolName="mcp://lean4-kernel/verify_changeset"
+                server="lean4-sandbox"
+                status="success"
+                durationMs={284}
+                argsJson={`{\n  "module": "Principia.Spectral.DampedOscillator",\n  "theorem": "damped_energy_contraction",\n  "allowSorry": false,\n  "timeoutMs": 5000\n}`}
+                outputPreview={`+ Lean 4.14.0 Kernel Check: PASS (0 axioms violated)\n+ Symbolic Residue |LHS - RHS|: 0.00000000e+00\n+ Ready for operator gate sign-off.`}
+                diffMode
+              />
+            </Card>
+          </div>
+        </div>
+
+        {/* Multi-Run Agent Execution Ledger DataTable */}
+        <Card
+          title="5. Autonomous Workflow Execution Ledger"
+          subtitle="Historical multi-agent runs across theorem proving, codebase optimization, and literature harvesting"
+        >
+          <DataTable<AgentRunLedgerRow>
+            caption="Table 1: Multi-Agent Workflow Telemetry & Verification Ledger"
+            rowKey={(r) => r.id}
+            searchPlaceholder="Filter runs by ID, mission, or gate status…"
+            columns={[
+              {
+                key: 'runId',
+                header: 'Run ID',
+                render: (r) => (
+                  <code className="ads-inline-code" style={{ fontWeight: 600 }}>
+                    {r.runId}
+                  </code>
+                ),
+              },
+              {
+                key: 'mission',
+                header: 'Agentic Mission Objective',
+                render: (r) => <strong>{r.mission}</strong>,
+              },
+              {
+                key: 'subagents',
+                header: 'Subagents',
+                group: 'Orchestration',
+                align: 'right',
+                numericValue: (r) => r.subagents,
+              },
+              {
+                key: 'toolCalls',
+                header: 'MCP Tool Calls',
+                group: 'Orchestration',
+                align: 'right',
+                numericValue: (r) => r.toolCalls,
+              },
+              {
+                key: 'verifierPassRate',
+                header: 'Verifier Pass (%)',
+                group: 'Telemetry',
+                align: 'right',
+                numericValue: (r) => r.verifierPassRate,
+                barMax: 100,
+                barColor: 'oklch(0.46 0.14 160 / 0.14)',
+                render: (r) => <strong>{r.verifierPassRate.toFixed(1)}%</strong>,
+              },
+              {
+                key: 'tokensK',
+                header: 'Tokens (k)',
+                group: 'Telemetry',
+                align: 'right',
+                numericValue: (r) => r.tokensK,
+                render: (r) => `${r.tokensK.toFixed(1)}k`,
+              },
+              {
+                key: 'durationSec',
+                header: 'Wall Time (s)',
+                group: 'Telemetry',
+                align: 'right',
+                numericValue: (r) => r.durationSec,
+                render: (r) => `${r.durationSec.toFixed(1)}s`,
+              },
+              {
+                key: 'gateStatus',
+                header: 'Governance Gate',
+                align: 'right',
+                render: (r) => (
+                  <Badge
+                    tone={
+                      r.gateStatus === 'Approved' || r.gateStatus === 'Auto-Verified'
+                        ? 'success'
+                        : 'warning'
+                    }
+                    dot
+                  >
+                    {r.gateStatus}
+                  </Badge>
+                ),
+              },
+            ]}
+            data={AGENT_RUN_LEDGER}
           />
         </Card>
       </div>

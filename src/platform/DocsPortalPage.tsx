@@ -1130,6 +1130,7 @@ export function App() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             {(
               [
+                { id: 'agent-workflow', label: 'Nexus (Agentic Workflow)' },
                 { id: 'ai-evals', label: 'EvalBench (AI Observatory)' },
                 { id: 'quant-macro', label: 'Meridian (Quant Terminal)' },
                 { id: 'biomed-trials', label: 'Helix (Clinical BioMed)' },

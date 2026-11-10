@@ -35,12 +35,14 @@ export type StoryComponentId =
   | 'citations-crossref'
   | 'omni-compute-bar'
   | 'code-cell'
-  | 'grounded-ai';
+  | 'grounded-ai'
+  | 'agentic-workflow';
 
 export type PrototypeAppId =
   | 'ai-evals'
   | 'quant-macro'
   | 'biomed-trials'
+  | 'agent-workflow'
   | 'principia'
   | 'wolfram'
   | 'monograph'
@@ -107,6 +109,7 @@ export function parseHashRoute(
       'omni-compute-bar',
       'code-cell',
       'grounded-ai',
+      'agentic-workflow',
     ];
     const storyId = validStories.includes(seg1 as StoryComponentId)
       ? (seg1 as StoryComponentId)
@@ -119,6 +122,7 @@ export function parseHashRoute(
       'ai-evals',
       'quant-macro',
       'biomed-trials',
+      'agent-workflow',
       'principia',
       'wolfram',
       'monograph',

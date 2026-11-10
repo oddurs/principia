@@ -938,11 +938,11 @@ export const MarketingLandingPage: React.FC<MarketingLandingPageProps> = ({
                 MULTI-DOMAIN APPLICATION PROTOTYPES
               </div>
               <h2 className="ads-display-title" style={{ fontSize: '26px', margin: '0 0 6px 0' }}>
-                Five distinct industry application concepts. One design system.
+                Six distinct industry application concepts. One design system.
               </h2>
               <p className="ads-prose" style={{ color: 'var(--ads-ink-graphite)', margin: 0 }}>
-                Launch any of the five production-grade application concepts below—spanning AI Evaluation SaaS,
-                Quantitative Macro Finance, Clinical Biostatistics, Physics Simulation, and Symbolic CAS—all built on{' '}
+                Launch any of the six production-grade application concepts below—spanning Autonomous Agent Orchestration,
+                AI Evaluation SaaS, Quantitative Macro Finance, Clinical Biostatistics, Physics Simulation, and Symbolic CAS—all built on{' '}
                 <code className="ads-inline-code">@principia/core</code>.
               </p>
             </div>
@@ -969,20 +969,31 @@ export const MarketingLandingPage: React.FC<MarketingLandingPageProps> = ({
             {(
               [
                 {
+                  id: 'agent-workflow' as PrototypeAppId,
+                  badge: 'AUTONOMOUS AGENT WORKFLOW',
+                  title: '1. Nexus Agent Orchestrator',
+                  subtitle: 'Multi-Agent DAG, MCP Traces & Verifier Gates',
+                  axes: 'DAG Pipeline + Trace Waterfall + Human Approval Gate',
+                  description:
+                    'Multi-agent research & engineering orchestrator with parallel subagent lanes, live MCP sandbox diffs, Lean 4 formal verifier gates, and operator sign-off.',
+                  accent: 'var(--ads-accent-compute, #D63E18)',
+                  icon: <Terminal size={14} color="var(--ads-accent-compute)" />,
+                },
+                {
                   id: 'ai-evals' as PrototypeAppId,
                   badge: 'AI ENGINEERING SAAS',
-                  title: '1. EvalBench AI Observatory',
+                  title: '2. EvalBench AI Observatory',
                   subtitle: 'Frontier Model Benchmarking & Compute Pareto',
                   axes: 'Generalist Foundation + Pareto Canvas + Trace Inspector',
                   description:
                     'Compare frontier LLMs across MMLU-Pro, GPQA Diamond, and MATH-500 with live test-time compute scaling curves and formal Lean 4 verifier logs.',
-                  accent: 'var(--ads-accent-compute, #D63E18)',
+                  accent: 'oklch(0.55 0.185 32)',
                   icon: <Cpu size={14} color="var(--ads-accent-compute)" />,
                 },
                 {
                   id: 'quant-macro' as PrototypeAppId,
                   badge: 'FINTECH & MACRO QUANT',
-                  title: '2. Meridian Risk Terminal',
+                  title: '3. Meridian Risk Terminal',
                   subtitle: 'Yield Curve Fitting, Greeks & Stress Var',
                   axes: 'Nelson–Siegel Curve + Rate Shock Scrubbers + Booktabs',
                   description:
@@ -993,7 +1004,7 @@ export const MarketingLandingPage: React.FC<MarketingLandingPageProps> = ({
                 {
                   id: 'biomed-trials' as PrototypeAppId,
                   badge: 'CLINICAL BIOSTATISTICS',
-                  title: '3. Helix Phase III Studio',
+                  title: '4. Helix Phase III Studio',
                   subtitle: 'Kaplan–Meier Survival & Subgroup Stratification',
                   axes: 'Survival Curves + Cox Proportional Hazards + NEJM Ledger',
                   description:
@@ -1004,7 +1015,7 @@ export const MarketingLandingPage: React.FC<MarketingLandingPageProps> = ({
                 {
                   id: 'principia' as PrototypeAppId,
                   badge: 'PHYSICS SIMULATION',
-                  title: '4. Principia Dynamical Lab',
+                  title: '5. Principia Dynamical Lab',
                   subtitle: 'Damped Oscillator, Quantum Wells & Lotka–Volterra',
                   axes: 'Hybrid Monograph + Parameter Deck + AI Copilot',
                   description:
@@ -1015,7 +1026,7 @@ export const MarketingLandingPage: React.FC<MarketingLandingPageProps> = ({
                 {
                   id: 'wolfram' as PrototypeAppId,
                   badge: 'SYMBOLIC CAS & IDE',
-                  title: '5. The Codex (3 Archetypes)',
+                  title: '6. The Codex (3 Archetypes)',
                   subtitle: 'Wolfram Engine · Tufte Monograph · Julia IDE',
                   axes: '3-in-1 Switchable Computational Publishing Suite',
                   description:
@@ -1201,6 +1212,7 @@ export const MarketingLandingPage: React.FC<MarketingLandingPageProps> = ({
                   { id: 'manipulate-scrubber', label: '6. Manipulate & Vernier Scrubber' },
                   { id: 'scientific-plot', label: '7. Scientific Plotting Suite' },
                   { id: 'code-cell', label: '8. Notebook Code Cell & Copilot' },
+                  { id: 'agentic-workflow', label: '9. Agentic Workflow & Orchestration' },
                 ] as const
               ).map((s) => (
                 <button
@@ -1224,11 +1236,12 @@ export const MarketingLandingPage: React.FC<MarketingLandingPageProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               {(
                 [
-                  { id: 'ai-evals', label: '1. EvalBench · AI Model Observatory' },
-                  { id: 'quant-macro', label: '2. Meridian · Quant Risk Terminal' },
-                  { id: 'biomed-trials', label: '3. Helix · Clinical Trials Studio' },
-                  { id: 'principia', label: '4. Principia · Physics Dynamical Lab' },
-                  { id: 'wolfram', label: '5. The Codex · Symbolic CAS & IDE' },
+                  { id: 'agent-workflow', label: '1. Nexus · Agentic Workflow Orchestrator' },
+                  { id: 'ai-evals', label: '2. EvalBench · AI Model Observatory' },
+                  { id: 'quant-macro', label: '3. Meridian · Quant Risk Terminal' },
+                  { id: 'biomed-trials', label: '4. Helix · Clinical Trials Studio' },
+                  { id: 'principia', label: '5. Principia · Physics Dynamical Lab' },
+                  { id: 'wolfram', label: '6. The Codex · Symbolic CAS & IDE' },
                 ] as const
               ).map((p) => (
                 <button

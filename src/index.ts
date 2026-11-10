@@ -18,6 +18,7 @@ export * from './primitives/manuscript/MathAndFormal';
 export * from './primitives/manuscript/CitationsAndRefs';
 export * from './primitives/datavis/ScienceAndVis';
 export * from './primitives/compute/CodeAndCopilot';
+export * from './primitives/agentic/AgenticWorkflow';
 
 // L4 Flagship Application Archetypes & Unified Platform Shell
 export * from './prototypes/DomainPrototypes';
