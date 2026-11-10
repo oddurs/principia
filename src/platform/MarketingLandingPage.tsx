@@ -93,9 +93,9 @@ const COMPONENT_PILLARS: Array<{
   {
     title: '4. Scientific DataVis & Tabular',
     badge: 'PILLAR IV · DATAVIS ENGINE',
-    description: 'Vector Cartesian & phase-space canvases, inline Tufte sparklines, and booktabs.sty tables.',
+    description: 'Vector Cartesian & RK4 phase-space canvases, 2D OKLCH heatmaps, Raincloud KDE & Forest plots, sparklines, and booktabs tables.',
     items: [
-      { id: 'scientific-plot', num: '11', title: 'Scientific Plotting Suite', exportsText: 'ScientificPlot · CartesianCanvas · PhaseSpaceCanvas' },
+      { id: 'scientific-plot', num: '11', title: 'Scientific Plotting Suite', exportsText: 'ScientificPlot · CartesianCanvas · HeatmapMatrix · DistributionPlot' },
       { id: 'sparkline-unit', num: '12', title: 'Sparklines & Dimensional Units', exportsText: 'Sparkline · UnitValue' },
       { id: 'booktabs-table', num: '13', title: 'Booktabs Publication Table', exportsText: 'BooktabsTable' },
     ],

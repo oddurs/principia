@@ -20,6 +20,8 @@ import {
   CartesianCanvas,
   ScientificPlot,
   BooktabsTable,
+  HeatmapMatrix,
+  DistributionPlot,
 } from '../primitives/datavis/ScienceAndVis';
 import {
   OmniComputeBar,
@@ -35,7 +37,6 @@ import {
   Callout,
   KeyValueList,
   Tabs,
-  Accordion,
   DataTable,
 } from '../primitives/general/GeneralFoundation';
 
@@ -352,7 +353,7 @@ export const EvalBenchPrototype: React.FC = () => {
             {viewMode === 'overview' && (
               <Pod
                 title="1. Test-Time Compute Scaling & Accuracy Pareto Frontier"
-                subtitle="Scrub Reasoning Budget (k tokens) or Temperature τ in the top bar to project scaling laws"
+                subtitle="Hover any point for multi-series crosshair inspection or scrub Reasoning Budget in the top bar"
                 domainTag="EMPIRICAL"
                 cellLabel="Eval[1]="
               >
@@ -365,6 +366,49 @@ export const EvalBenchPrototype: React.FC = () => {
                   yTicks={[60, 70, 80, 90, 100]}
                   series={paretoSeries}
                   scrubX={thinkingBudget}
+                  markers={[
+                    {
+                      id: 'mk-principia',
+                      x: 24,
+                      y: Math.min(96.8, 91.5 - Math.abs(temperature - 0.15) * 3.2),
+                      label: 'Principia-v3',
+                      color: 'oklch(0.45 0.15 255)',
+                      shape: 'diamond',
+                      size: 4.2,
+                      halo: true,
+                      labelPosition: 'top',
+                    },
+                    {
+                      id: 'mk-claude',
+                      x: 16,
+                      y: Math.min(93.8, 88.8 - Math.abs(temperature - 0.15) * 3.2),
+                      label: 'Claude 3.7',
+                      color: 'oklch(0.46 0.14 160)',
+                      shape: 'circle',
+                      size: 3.6,
+                      labelPosition: 'bottom',
+                    },
+                    {
+                      id: 'mk-o3',
+                      x: 12,
+                      y: Math.min(92.1, 86.4 - Math.abs(temperature - 0.15) * 3.2),
+                      label: 'o3-mini',
+                      color: 'oklch(0.48 0.16 310)',
+                      shape: 'square',
+                      size: 3.4,
+                      labelPosition: 'top',
+                    },
+                    {
+                      id: 'mk-llama',
+                      x: 4,
+                      y: 73.5,
+                      label: 'Llama-3.3-70B',
+                      color: 'oklch(0.55 0.18 32)',
+                      shape: 'circle',
+                      size: 3.4,
+                      labelPosition: 'right',
+                    },
+                  ]}
                   thresholds={[
                     {
                       axis: 'x',
@@ -378,7 +422,7 @@ export const EvalBenchPrototype: React.FC = () => {
             )}
 
             <Card
-              title={`2. Verifier Trace & Completion Inspector — ${selectedModel.name}`}
+              title={`2. Verifier Trace & Capability Matrix — ${selectedModel.name}`}
               subtitle={`${selectedModel.provider} · ${selectedModel.arch} · Click any row in table below to switch`}
               headerRight={
                 <Badge tone={selectedModel.tone} dot>
@@ -419,8 +463,28 @@ export const EvalBenchPrototype: React.FC = () => {
                     ),
                   },
                   {
+                    id: 'heatmap',
+                    label: 'Capability Heatmap',
+                    badge: '5×4',
+                    content: (
+                      <HeatmapMatrix
+                        rowLabels={EVAL_MODELS.map((m) => m.name.split(' ')[0])}
+                        colLabels={['MMLU-Pro', 'GPQA-D', 'MATH-500', 'HumanEval']}
+                        values={EVAL_MODELS.map((m) => [
+                          m.mmlu,
+                          m.gpqa,
+                          m.math500,
+                          m.humaneval,
+                        ])}
+                        domain={[55, 100]}
+                        unit="%"
+                        colormap="cobalt"
+                      />
+                    ),
+                  },
+                  {
                     id: 'telemetry',
-                    label: 'Serving & KV-Cache Telemetry',
+                    label: 'Serving Telemetry',
                     content: (
                       <KeyValueList
                         columns={2}
@@ -849,7 +913,7 @@ export const MeridianQuantPrototype: React.FC = () => {
         >
           <Pod
             title="1. Nelson–Siegel–Svensson Parametric Yield Curve"
-            subtitle="Scrub Rate Shock Δr₀ (bps) or Implied Volatility σ_VIX in the top bar"
+            subtitle="Hover to inspect tenor yields across curves or scrub Rate Shock Δr₀ (bps) in the top bar"
             domainTag="NUMERICAL"
             cellLabel="Curve[1]="
           >
@@ -861,11 +925,54 @@ export const MeridianQuantPrototype: React.FC = () => {
               xTicks={[0, 5, 10, 15, 20, 25, 30]}
               yTicks={[2, 3, 4, 5, 6, 7]}
               series={yieldCurveSeries}
+              regions={[
+                {
+                  axis: 'x',
+                  from: 0,
+                  to: 3,
+                  label: 'FOMC Policy Front-End',
+                  color: 'oklch(0.92 0.03 255)',
+                  opacity: 0.22,
+                },
+              ]}
+              markers={[
+                {
+                  id: 'ust-2y',
+                  x: 2,
+                  y: yieldCurveSeries[0].points[3]?.y ?? 4.1,
+                  label: '2Y Note',
+                  color: 'oklch(0.45 0.15 255)',
+                  shape: 'circle',
+                  size: 3.4,
+                  labelPosition: 'bottom',
+                },
+                {
+                  id: 'ust-10y',
+                  x: 10,
+                  y: yieldCurveSeries[0].points[16]?.y ?? 4.4,
+                  label: '10Y Benchmark',
+                  color: 'oklch(0.45 0.15 255)',
+                  shape: 'diamond',
+                  size: 4.2,
+                  halo: true,
+                  labelPosition: 'top',
+                },
+                {
+                  id: 'ust-30y',
+                  x: 29,
+                  y: yieldCurveSeries[0].points[48]?.y ?? 4.6,
+                  label: '30Y Bond',
+                  color: 'oklch(0.45 0.15 255)',
+                  shape: 'square',
+                  size: 3.4,
+                  labelPosition: 'left',
+                },
+              ]}
               thresholds={[
                 {
                   axis: 'x',
                   value: 10,
-                  label: `10Y Benchmark (${(4.33 + rateShockBps / 100).toFixed(2)}%)`,
+                  label: `10Y (${(4.33 + rateShockBps / 100).toFixed(2)}%)`,
                   color: 'oklch(0.45 0.15 255)',
                 },
               ]}
@@ -1097,6 +1204,8 @@ export const HelixBioMedPrototype: React.FC = () => {
         id: 'treatment-arm',
         label: `mRNA-4157 + Pembrolizumab (HR = ${hazardRatio.toFixed(2)})`,
         color: 'oklch(0.45 0.15 255)',
+        interpolation: 'step-after' as const,
+        censorPoints: [5, 11, 16, 21, 26, 31, 34],
         points: trtPoints,
         fillArea: true,
       },
@@ -1104,6 +1213,8 @@ export const HelixBioMedPrototype: React.FC = () => {
         id: 'control-arm',
         label: 'Control Monotherapy Arm (Placebo + Pembrolizumab)',
         color: 'oklch(0.55 0.18 32)',
+        interpolation: 'step-after' as const,
+        censorPoints: [4, 9, 14, 19, 25, 30],
         points: ctrlPoints,
         dashed: true,
       },
@@ -1280,37 +1391,72 @@ export const HelixBioMedPrototype: React.FC = () => {
           </Pod>
 
           <Pod
-            title="2. Cox Proportional Hazards & CONSORT Trial Governance"
-            subtitle="Semi-Parametric Partial Likelihood & Interim Safety Monitoring"
+            title="2. Subgroup Hazard Ratio Forest Plot & Cox Proportional Hazards"
+            subtitle="Cochrane / NEJM Forest Plot with 95% CI Whiskers, Weight Squares & Pooled Diamond"
             domainTag="THEOREM"
             cellLabel="Cox[2]="
             latexSource="\lambda(t \mid \mathbf{X}_i) = \lambda_0(t)\exp\!\left(\boldsymbol{\beta}^\top \mathbf{X}_i\right)"
           >
+            <DistributionPlot
+              mode="forest"
+              xAxisLabel="Hazard Ratio HR (95% CI · HR < 1.0 Favors mRNA-4157 + Pembrolizumab)"
+              domain={[0.15, 1.25]}
+              nullValue={1.0}
+              groups={[
+                {
+                  id: 'itt',
+                  label: 'All Randomized (ITT)',
+                  sublabel: 'N = 1,240 · p < 0.0001',
+                  estimate: hazardRatio,
+                  ciLower: Math.max(0.2, hazardRatio - 0.11),
+                  ciUpper: hazardRatio + 0.13,
+                  weight: 34,
+                  color: 'oklch(0.45 0.15 255)',
+                },
+                {
+                  id: 'pdl1',
+                  label: 'PD-L1 TPS ≥ 50%',
+                  sublabel: 'n = 618 · p < 0.0001',
+                  estimate: 0.48,
+                  ciLower: 0.35,
+                  ciUpper: 0.66,
+                  weight: 26,
+                  color: 'oklch(0.46 0.14 160)',
+                },
+                {
+                  id: 'ctdna',
+                  label: 'ctDNA MRD Cleared',
+                  sublabel: 'n = 485 · p < 0.0001',
+                  estimate: 0.39,
+                  ciLower: 0.26,
+                  ciUpper: 0.58,
+                  weight: 22,
+                  color: 'oklch(0.48 0.16 310)',
+                },
+                {
+                  id: 'stage-iiic',
+                  label: 'Stage IIIC High-Risk',
+                  sublabel: 'n = 422 · p = 0.0034',
+                  estimate: 0.63,
+                  ciLower: 0.46,
+                  ciUpper: 0.86,
+                  weight: 18,
+                  color: 'oklch(0.52 0.18 32)',
+                },
+              ]}
+              pooledSummary={{
+                label: 'Pooled Stratified HR',
+                estimate: Number((hazardRatio * 0.94).toFixed(2)),
+                ciLower: Number(Math.max(0.22, hazardRatio * 0.94 - 0.09).toFixed(2)),
+                ciUpper: Number((hazardRatio * 0.94 + 0.1).toFixed(2)),
+              }}
+            />
             <EquationBlock
               number="3.1"
               latex={`\\lambda(t \\mid \\mathbf{X}_i) = \\lambda_0(t)\\exp\\!\\left(\\boldsymbol{\\beta}^\\top \\mathbf{X}_i\\right), \\qquad \\text{HR} = e^{\\beta_{\\text{trt}}} = ${hazardRatio.toFixed(
                 2
               )}`}
               caption="Cox proportional hazards model relating covariate vector X_i to baseline hazard λ₀(t)."
-            />
-            <Accordion
-              defaultOpenIds={['consort-1']}
-              items={[
-                {
-                  id: 'consort-1',
-                  title: 'Primary Endpoint & Schoenfeld Residual Check',
-                  subtitle: 'Proportionality p = 0.74 (Valid)',
-                  content:
-                    'Global Schoenfeld residual test confirms no violation of the proportional hazards assumption across the 36-month follow-up window.',
-                },
-                {
-                  id: 'consort-2',
-                  title: 'Independent DSMB Interim Analysis Charter',
-                  subtitle: 'Two-Sided α = 0.0042 Spent',
-                  content:
-                    'Triggered after 380 primary recurrence events. Crossed pre-specified Lan–DeMets efficacy boundary with 99.6% statistical power.',
-                },
-              ]}
             />
           </Pod>
         </div>

@@ -109,17 +109,23 @@ export interface SparklineProps {
   color?: string;
   fillArea?: boolean;
   showZeroLine?: boolean;
+  showMinMax?: boolean;
+  showBand?: boolean;
+  variant?: 'line' | 'bar';
   highlightIndex?: number;
 }
 
 export const Sparkline: React.FC<SparklineProps> = ({
   data,
   domain,
-  width = 72,
+  width = 76,
   height = 20,
   color = 'oklch(0.42 0.16 255)',
   fillArea = true,
   showZeroLine = true,
+  showMinMax = false,
+  showBand = false,
+  variant = 'line',
   highlightIndex,
 }) => {
   if (!data || data.length < 2) return null;
@@ -127,24 +133,38 @@ export const Sparkline: React.FC<SparklineProps> = ({
   const minVal = domain ? domain[0] : Math.min(...data);
   const maxVal = domain ? domain[1] : Math.max(...data);
   const span = Math.max(1e-6, maxVal - minVal);
-  const pad = 2;
+  const pad = 2.5;
   const innerW = width - pad * 2;
   const innerH = height - pad * 2;
 
   const mapX = (i: number) => pad + (i / (data.length - 1)) * innerW;
-  const mapY = (v: number) => pad + ((maxVal - v) / span) * innerH;
+  const mapY = (v: number) =>
+    pad + Math.max(0, Math.min(1, (maxVal - v) / span)) * innerH;
 
   const linePath = data
     .map((v, i) => `${i === 0 ? 'M' : 'L'}${mapX(i).toFixed(1)},${mapY(v).toFixed(1)}`)
     .join(' ');
 
-  const zeroY = mapY(0);
+  const baselineVal = minVal <= 0 && maxVal >= 0 ? 0 : minVal;
+  const zeroY = mapY(baselineVal);
   const areaPath = `${linePath} L${mapX(data.length - 1).toFixed(1)},${zeroY.toFixed(1)} L${mapX(0).toFixed(1)},${zeroY.toFixed(1)} Z`;
 
   const hiIdx =
     highlightIndex !== undefined
       ? Math.max(0, Math.min(data.length - 1, highlightIndex))
       : data.length - 1;
+
+  // Min / Max indices & IQR band
+  let minIdx = 0;
+  let maxIdx = 0;
+  data.forEach((v, idx) => {
+    if (v < data[minIdx]) minIdx = idx;
+    if (v > data[maxIdx]) maxIdx = idx;
+  });
+
+  const sorted = [...data].sort((a, b) => a - b);
+  const q25 = sorted[Math.floor(sorted.length * 0.25)] ?? minVal;
+  const q75 = sorted[Math.floor(sorted.length * 0.75)] ?? maxVal;
 
   return (
     <svg
@@ -157,38 +177,96 @@ export const Sparkline: React.FC<SparklineProps> = ({
         overflow: 'visible',
       }}
     >
+      {showBand && (
+        <rect
+          x={pad}
+          y={mapY(q75)}
+          width={innerW}
+          height={Math.max(1, mapY(q25) - mapY(q75))}
+          fill="oklch(0.88 0.02 255 / 0.38)"
+          rx={1}
+        />
+      )}
       {showZeroLine && minVal <= 0 && maxVal >= 0 && (
         <line
           x1={pad}
           y1={zeroY}
           x2={width - pad}
           y2={zeroY}
-          stroke="oklch(0.86 0.005 80)"
+          stroke="oklch(0.84 0.006 80)"
           strokeWidth={0.75}
+          strokeDasharray="1.5 1.5"
         />
       )}
-      {fillArea && (
-        <path
-          d={areaPath}
-          fill={color}
-          fillOpacity={0.12}
-          style={{ mixBlendMode: 'multiply' }}
-        />
+      {variant === 'bar' ? (
+        data.map((v, idx) => {
+          const bw = Math.max(1.2, innerW / data.length - 1);
+          const bx = pad + (idx / data.length) * innerW;
+          const yVal = mapY(v);
+          const top = Math.min(yVal, zeroY);
+          const bh = Math.max(1, Math.abs(zeroY - yVal));
+          const isNeg = v < 0;
+          return (
+            <rect
+              key={idx}
+              x={bx}
+              y={top}
+              width={bw}
+              height={bh}
+              rx={0.6}
+              fill={isNeg ? 'oklch(0.55 0.19 32)' : color}
+              fillOpacity={idx === hiIdx ? 0.95 : 0.65}
+            />
+          );
+        })
+      ) : (
+        <>
+          {fillArea && (
+            <path
+              d={areaPath}
+              fill={color}
+              fillOpacity={0.13}
+              style={{ mixBlendMode: 'multiply' }}
+            />
+          )}
+          <path
+            d={linePath}
+            fill="none"
+            stroke={color}
+            strokeWidth={1.4}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          {showMinMax && (
+            <>
+              <circle
+                cx={mapX(minIdx)}
+                cy={mapY(data[minIdx])}
+                r={1.9}
+                fill="oklch(0.55 0.19 32)"
+                stroke="#FFFFFF"
+                strokeWidth={0.7}
+              />
+              <circle
+                cx={mapX(maxIdx)}
+                cy={mapY(data[maxIdx])}
+                r={1.9}
+                fill="oklch(0.46 0.14 160)"
+                stroke="#FFFFFF"
+                strokeWidth={0.7}
+              />
+            </>
+          )}
+          <circle
+            cx={mapX(hiIdx)}
+            cy={mapY(data[hiIdx])}
+            r={2.2}
+            fill={color}
+            stroke="#FFFFFF"
+            strokeWidth={0.8}
+          />
+        </>
       )}
-      <path
-        d={linePath}
-        fill="none"
-        stroke={color}
-        strokeWidth={1.35}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <circle
-        cx={mapX(hiIdx)}
-        cy={mapY(data[hiIdx])}
-        r={2}
-        fill={color}
-      />
     </svg>
   );
 };
@@ -198,18 +276,24 @@ export const Sparkline: React.FC<SparklineProps> = ({
  * 2. DECLARATIVE 2D CARTESIAN PLOT ENGINE (<CartesianCanvas />)
  * ============================================================================
  * Supports linear & log10 scales, pgfplots boxed vs Tufte range-frame axes,
- * inward surgical ticks, confidence bands, empirical ±1σ error bars,
- * threshold annotations, and interactive crosshair scrubbing.
+ * step-after (Kaplan-Meier) & monotone cubic spline interpolation, shaded
+ * regime intervals, Pareto scatter markers, integrated legends, and native
+ * interactive multi-series crosshair inspection.
  */
 export interface PlotSeries {
   id: string;
   label?: string;
+  endLabel?: string;
   symbolId?: string;
   color: string;
   strokeWidth?: number;
   dashArray?: string;
+  dashed?: boolean;
+  interpolation?: 'linear' | 'step-after' | 'monotone';
+  censorPoints?: number[];
   points: Array<{ x: number; y: number }>;
   fillToZero?: boolean;
+  fillArea?: boolean;
   fillOpacity?: number;
 }
 
@@ -226,6 +310,28 @@ export interface PlotErrorPoint {
   yErr: number;
   xErr?: number;
   color?: string;
+}
+
+export interface PlotMarker {
+  id?: string;
+  x: number;
+  y: number;
+  label?: string;
+  sublabel?: string;
+  color?: string;
+  shape?: 'circle' | 'diamond' | 'square';
+  size?: number;
+  halo?: boolean;
+  labelPosition?: 'top' | 'right' | 'bottom' | 'left';
+}
+
+export interface PlotRegion {
+  axis: 'x' | 'y';
+  from: number;
+  to: number;
+  label?: string;
+  color?: string;
+  opacity?: number;
 }
 
 export interface PlotThreshold {
@@ -252,19 +358,98 @@ export interface CartesianCanvasProps {
   yAxisLabel?: string;
   frameStyle?: 'box' | 'range-frame' | 'l-frame';
   showGrid?: boolean;
+  showLegend?: boolean;
+  interactive?: boolean;
   series: PlotSeries[];
   bands?: PlotConfidenceBand[];
   errorPoints?: PlotErrorPoint[];
+  markers?: PlotMarker[];
+  regions?: PlotRegion[];
   thresholds?: PlotThreshold[];
   scrubX?: number;
   onScrubX?: (x: number) => void;
   activeReadout?: { x: number; y: number; color?: string; secondaryY?: number };
 }
 
+function buildSeriesPath(
+  pts: Array<{ sx: number; sy: number }>,
+  mode: 'linear' | 'step-after' | 'monotone' = 'linear'
+): string {
+  if (pts.length === 0) return '';
+  if (pts.length === 1) return `M${pts[0].sx.toFixed(1)},${pts[0].sy.toFixed(1)}`;
+
+  if (mode === 'step-after') {
+    const cmds: string[] = [`M${pts[0].sx.toFixed(1)},${pts[0].sy.toFixed(1)}`];
+    for (let i = 1; i < pts.length; i++) {
+      cmds.push(`L${pts[i].sx.toFixed(1)},${pts[i - 1].sy.toFixed(1)}`);
+      cmds.push(`L${pts[i].sx.toFixed(1)},${pts[i].sy.toFixed(1)}`);
+    }
+    return cmds.join(' ');
+  }
+
+  if (mode === 'monotone' && pts.length >= 3) {
+    const n = pts.length;
+    const dx: number[] = [];
+    const dy: number[] = [];
+    const m: number[] = [];
+    for (let i = 0; i < n - 1; i++) {
+      dx.push(Math.max(1e-4, pts[i + 1].sx - pts[i].sx));
+      dy.push(pts[i + 1].sy - pts[i].sy);
+      m.push(dy[i] / dx[i]);
+    }
+    const tangents: number[] = [m[0]];
+    for (let i = 1; i < n - 1; i++) {
+      if (m[i - 1] * m[i] <= 0) {
+        tangents.push(0);
+      } else {
+        tangents.push((m[i - 1] + m[i]) * 0.5);
+      }
+    }
+    tangents.push(m[n - 2]);
+
+    const cmds: string[] = [`M${pts[0].sx.toFixed(1)},${pts[0].sy.toFixed(1)}`];
+    for (let i = 0; i < n - 1; i++) {
+      const h = dx[i] / 3;
+      const cp1x = pts[i].sx + h;
+      const cp1y = pts[i].sy + tangents[i] * h;
+      const cp2x = pts[i + 1].sx - h;
+      const cp2y = pts[i + 1].sy - tangents[i + 1] * h;
+      cmds.push(
+        `C${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${pts[i + 1].sx.toFixed(1)},${pts[i + 1].sy.toFixed(1)}`
+      );
+    }
+    return cmds.join(' ');
+  }
+
+  return pts
+    .map((p, idx) => `${idx === 0 ? 'M' : 'L'}${p.sx.toFixed(1)},${p.sy.toFixed(1)}`)
+    .join(' ');
+}
+
+function interpolateSeriesY(
+  points: Array<{ x: number; y: number }>,
+  targetX: number,
+  mode: 'linear' | 'step-after' | 'monotone' = 'linear'
+): number | null {
+  if (!points || points.length === 0) return null;
+  if (targetX <= points[0].x) return points[0].y;
+  if (targetX >= points[points.length - 1].x) return points[points.length - 1].y;
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[i];
+    const p1 = points[i + 1];
+    if (targetX >= p0.x && targetX <= p1.x) {
+      if (mode === 'step-after') return p0.y;
+      const t = (targetX - p0.x) / Math.max(1e-9, p1.x - p0.x);
+      return p0.y + t * (p1.y - p0.y);
+    }
+  }
+  return points[points.length - 1].y;
+}
+
 export const CartesianCanvas: React.FC<CartesianCanvasProps> = ({
   id,
-  width = 440,
-  height = 235,
+  width = 450,
+  height = 240,
   xDomain,
   yDomain,
   xScale = 'linear',
@@ -277,19 +462,37 @@ export const CartesianCanvas: React.FC<CartesianCanvasProps> = ({
   yAxisLabel,
   frameStyle = 'box',
   showGrid = true,
+  showLegend = true,
+  interactive = true,
   series,
   bands = [],
   errorPoints = [],
+  markers = [],
+  regions = [],
   thresholds = [],
   scrubX,
   onScrubX,
   activeReadout,
 }) => {
   const { activeSymbolId } = useAcademicSystem();
+  const [hoverX, setHoverX] = useState<number | null>(null);
 
-  const pad = { top: 16, right: 16, bottom: xAxisLabel ? 38 : 28, left: yAxisLabel ? 48 : 38 };
+  const hasLegend = showLegend && series.some((s) => Boolean(s.label));
+  const hasEndLabels = series.some((s) => Boolean(s.endLabel));
+
+  const pad = {
+    top: hasLegend ? 30 : 16,
+    right: hasEndLabels ? 58 : 18,
+    bottom: xAxisLabel ? 40 : 28,
+    left: yAxisLabel ? 52 : 40,
+  };
   const innerW = width - pad.left - pad.right;
   const innerH = height - pad.top - pad.bottom;
+
+  const clipId = useMemo(
+    () => `ads-clip-${id || Math.random().toString(36).slice(2, 9)}`,
+    [id]
+  );
 
   const mapX = (val: number) => {
     if (xScale === 'log') {
@@ -323,6 +526,7 @@ export const CartesianCanvas: React.FC<CartesianCanvasProps> = ({
 
   const formatNum = (v: number) => {
     if (Math.abs(v) < 1e-9) return '0.0';
+    if (Math.abs(v) >= 100) return v.toFixed(0).replace('-', '−');
     return v.toFixed(1).replace('-', '−');
   };
 
@@ -362,6 +566,32 @@ export const CartesianCanvas: React.FC<CartesianCanvasProps> = ({
     return minors;
   }, [xScale, xDomain]);
 
+  // Effective crosshair X (either external scrubX or internal hoverX)
+  const effectiveScrubX = hoverX !== null ? hoverX : scrubX;
+
+  const crosshairIntersections = useMemo(() => {
+    if (effectiveScrubX === undefined) return [];
+    return series
+      .map((s) => {
+        const yVal = interpolateSeriesY(s.points, effectiveScrubX, s.interpolation);
+        if (yVal === null) return null;
+        return {
+          id: s.id,
+          label: s.label || s.id,
+          color: s.color,
+          x: effectiveScrubX,
+          y: yVal,
+        };
+      })
+      .filter(Boolean) as Array<{
+      id: string;
+      label: string;
+      color: string;
+      x: number;
+      y: number;
+    }>;
+  }, [effectiveScrubX, series]);
+
   return (
     <svg
       id={id}
@@ -370,16 +600,137 @@ export const CartesianCanvas: React.FC<CartesianCanvasProps> = ({
         width: '100%',
         height: 'auto',
         display: 'block',
-        cursor: onScrubX ? 'crosshair' : 'default',
+        cursor: interactive || onScrubX ? 'crosshair' : 'default',
         userSelect: 'none',
       }}
       onPointerMove={(e) => {
-        if (!onScrubX) return;
+        if (!interactive && !onScrubX) return;
         const rect = e.currentTarget.getBoundingClientRect();
         const relX = ((e.clientX - rect.left) / rect.width) * width;
-        onScrubX(unmapX(relX));
+        const valX = unmapX(relX);
+        if (onScrubX) {
+          onScrubX(valX);
+        } else if (interactive) {
+          setHoverX(valX);
+        }
+      }}
+      onPointerLeave={() => {
+        if (hoverX !== null) setHoverX(null);
       }}
     >
+      <defs>
+        <clipPath id={clipId}>
+          <rect x={pad.left} y={pad.top} width={innerW} height={innerH} />
+        </clipPath>
+      </defs>
+
+      {/* Subtle Porcelain Plot Canvas Well */}
+      {frameStyle === 'box' && (
+        <rect
+          x={pad.left}
+          y={pad.top}
+          width={innerW}
+          height={innerH}
+          fill="oklch(0.996 0.002 85 / 0.65)"
+        />
+      )}
+
+      {/* Integrated Top Series Legend Strip */}
+      {hasLegend && (
+        <g transform={`translate(${pad.left}, 11)`}>
+          {series
+            .filter((s) => Boolean(s.label))
+            .slice(0, 3)
+            .map((s, idx) => {
+              const offsetX = idx * Math.min(205, Math.floor(innerW / Math.min(3, series.length)));
+              const isDash = Boolean(s.dashArray || s.dashed);
+              return (
+                <g key={`leg-${s.id}`} transform={`translate(${offsetX}, 0)`}>
+                  <line
+                    x1={0}
+                    y1={0}
+                    x2={14}
+                    y2={0}
+                    stroke={s.color}
+                    strokeWidth={2}
+                    strokeDasharray={s.dashArray || (isDash ? '3 2' : undefined)}
+                  />
+                  <text
+                    x={18}
+                    y={3.2}
+                    fontSize="9"
+                    fontFamily="var(--ads-font-chrome, Inter, sans-serif)"
+                    fontWeight={500}
+                    fill="#4E4D49"
+                  >
+                    {s.label && s.label.length > 34 ? `${s.label.slice(0, 33)}…` : s.label}
+                  </text>
+                </g>
+              );
+            })}
+        </g>
+      )}
+
+      {/* Shaded Regime / Interval Regions (Clipped) */}
+      <g clipPath={`url(#${clipId})`}>
+        {regions.map((reg, idx) => {
+          if (reg.axis === 'x') {
+            const x1 = Math.min(mapX(reg.from), mapX(reg.to));
+            const x2 = Math.max(mapX(reg.from), mapX(reg.to));
+            return (
+              <g key={`reg-${idx}`}>
+                <rect
+                  x={x1}
+                  y={pad.top}
+                  width={Math.max(1, x2 - x1)}
+                  height={innerH}
+                  fill={reg.color || 'oklch(0.92 0.03 255)'}
+                  fillOpacity={reg.opacity ?? 0.25}
+                />
+                {reg.label && (
+                  <text
+                    x={(x1 + x2) / 2}
+                    y={pad.top + 11}
+                    textAnchor="middle"
+                    fontSize="8.5"
+                    fontFamily="var(--ads-font-mono, monospace)"
+                    fill="#6E6C66"
+                  >
+                    {reg.label}
+                  </text>
+                )}
+              </g>
+            );
+          } else {
+            const y1 = Math.min(mapY(reg.from), mapY(reg.to));
+            const y2 = Math.max(mapY(reg.from), mapY(reg.to));
+            return (
+              <g key={`reg-${idx}`}>
+                <rect
+                  x={pad.left}
+                  y={y1}
+                  width={innerW}
+                  height={Math.max(1, y2 - y1)}
+                  fill={reg.color || 'oklch(0.92 0.03 160)'}
+                  fillOpacity={reg.opacity ?? 0.22}
+                />
+                {reg.label && (
+                  <text
+                    x={pad.left + 6}
+                    y={y1 + 10}
+                    fontSize="8.5"
+                    fontFamily="var(--ads-font-mono, monospace)"
+                    fill="#6E6C66"
+                  >
+                    {reg.label}
+                  </text>
+                )}
+              </g>
+            );
+          }
+        })}
+      </g>
+
       {/* Gridlines & Y Ticks */}
       {yTicks.map((tick) => {
         const y = mapY(tick);
@@ -394,19 +745,19 @@ export const CartesianCanvas: React.FC<CartesianCanvasProps> = ({
                 y2={y}
                 stroke={
                   isZero
-                    ? 'oklch(0.78 0.006 80)'
-                    : 'oklch(0.935 0.004 82)'
+                    ? 'oklch(0.76 0.008 80)'
+                    : 'oklch(0.932 0.004 82)'
                 }
                 strokeWidth={isZero ? 1 : 0.75}
               />
             )}
-            {/* Surgical inward/outward tick mark */}
+            {/* Surgical inward tick mark */}
             <line
               x1={pad.left}
               y1={y}
-              x2={pad.left + 4}
+              x2={pad.left + 4.5}
               y2={y}
-              stroke="oklch(0.45 0.008 80)"
+              stroke="oklch(0.42 0.008 80)"
               strokeWidth={0.9}
             />
             {frameStyle === 'box' && (
@@ -415,17 +766,17 @@ export const CartesianCanvas: React.FC<CartesianCanvasProps> = ({
                 y1={y}
                 x2={width - pad.right}
                 y2={y}
-                stroke="oklch(0.60 0.008 80)"
+                stroke="oklch(0.58 0.008 80)"
                 strokeWidth={0.8}
               />
             )}
             <text
               x={pad.left - 6}
-              y={y + 3.5}
+              y={y + 3.2}
               textAnchor="end"
-              fontSize="9.5"
-              fontFamily="Inter, -apple-system, sans-serif"
-              fill="#6E6C66"
+              fontSize="9"
+              fontFamily="var(--ads-font-mono, 'JetBrains Mono', monospace)"
+              fill="#65635D"
             >
               {yTickFormat ? yTickFormat(tick) : formatNum(tick)}
             </text>
@@ -444,16 +795,16 @@ export const CartesianCanvas: React.FC<CartesianCanvasProps> = ({
                 y1={pad.top}
                 x2={x}
                 y2={height - pad.bottom}
-                stroke="oklch(0.95 0.004 82)"
+                stroke="oklch(0.945 0.004 82)"
                 strokeWidth={0.65}
               />
             )}
             <line
               x1={x}
-              y1={height - pad.bottom - 4}
+              y1={height - pad.bottom - 4.5}
               x2={x}
               y2={height - pad.bottom}
-              stroke="oklch(0.45 0.008 80)"
+              stroke="oklch(0.42 0.008 80)"
               strokeWidth={0.9}
             />
             {frameStyle === 'box' && (
@@ -462,7 +813,7 @@ export const CartesianCanvas: React.FC<CartesianCanvasProps> = ({
                 y1={pad.top}
                 x2={x}
                 y2={pad.top + 3.5}
-                stroke="oklch(0.60 0.008 80)"
+                stroke="oklch(0.58 0.008 80)"
                 strokeWidth={0.8}
               />
             )}
@@ -470,9 +821,9 @@ export const CartesianCanvas: React.FC<CartesianCanvasProps> = ({
               x={x}
               y={height - pad.bottom + 14}
               textAnchor="middle"
-              fontSize="9.5"
-              fontFamily="Inter, -apple-system, sans-serif"
-              fill="#6E6C66"
+              fontSize="9"
+              fontFamily="var(--ads-font-mono, 'JetBrains Mono', monospace)"
+              fill="#65635D"
             >
               {xTickFormat ? xTickFormat(tick) : `${tick}`}
             </text>
@@ -487,7 +838,7 @@ export const CartesianCanvas: React.FC<CartesianCanvasProps> = ({
           <line
             key={`logminor-${mTick}`}
             x1={x}
-            y1={height - pad.bottom - 2.2}
+            y1={height - pad.bottom - 2.4}
             x2={x}
             y2={height - pad.bottom}
             stroke="oklch(0.65 0.006 80)"
@@ -496,77 +847,146 @@ export const CartesianCanvas: React.FC<CartesianCanvasProps> = ({
         );
       })}
 
-      {/* Axis Spines (Box, L-Frame, or Tufte Range-Frame) */}
-      <line
-        x1={xSpineMin}
-        y1={height - pad.bottom}
-        x2={xSpineMax}
-        y2={height - pad.bottom}
-        stroke="oklch(0.42 0.008 80)"
-        strokeWidth={1}
-      />
-      <line
-        x1={pad.left}
-        y1={ySpineMin}
-        x2={pad.left}
-        y2={ySpineMax}
-        stroke="oklch(0.42 0.008 80)"
-        strokeWidth={1}
-      />
-      {frameStyle === 'box' && (
-        <>
-          <line
-            x1={pad.left}
-            y1={pad.top}
-            x2={width - pad.right}
-            y2={pad.top}
-            stroke="oklch(0.68 0.006 80)"
-            strokeWidth={0.85}
-          />
-          <line
-            x1={width - pad.right}
-            y1={pad.top}
-            x2={width - pad.right}
-            y2={height - pad.bottom}
-            stroke="oklch(0.68 0.006 80)"
-            strokeWidth={0.85}
-          />
-        </>
-      )}
+      {/* Clipped Data Layer: Confidence Bands, Series Curves, Area Fills & Error Bars */}
+      <g clipPath={`url(#${clipId})`}>
+        {/* Confidence Bands */}
+        {bands.map((band) => {
+          if (band.points.length < 2) return null;
+          const d = [
+            ...band.points.map(
+              (p, idx) =>
+                `${idx === 0 ? 'M' : 'L'}${mapX(p.x).toFixed(1)},${mapY(p.upper).toFixed(1)}`
+            ),
+            ...[...band.points]
+              .reverse()
+              .map((p) => `L${mapX(p.x).toFixed(1)},${mapY(p.lower).toFixed(1)}`),
+            'Z',
+          ].join(' ');
+          return (
+            <path
+              key={band.id}
+              d={d}
+              fill={band.color}
+              fillOpacity={band.opacity ?? 0.18}
+              style={{ mixBlendMode: 'multiply' }}
+            />
+          );
+        })}
 
-      {/* Axis Titles */}
-      {xAxisLabel && (
-        <text
-          x={pad.left + innerW / 2}
-          y={height - 5}
-          textAnchor="middle"
-          fontSize="10"
-          fontFamily="KaTeX_Main, Newsreader, serif"
-          fontStyle="italic"
-          fill="#4E4D49"
-        >
-          {xAxisLabel}
-        </text>
-      )}
-      {yAxisLabel && (
-        <text
-          x={12}
-          y={pad.top + innerH / 2}
-          textAnchor="middle"
-          fontSize="10"
-          fontFamily="KaTeX_Main, Newsreader, serif"
-          fontStyle="italic"
-          fill="#4E4D49"
-          transform={`rotate(-90, 12, ${pad.top + innerH / 2})`}
-        >
-          {yAxisLabel}
-        </text>
-      )}
+        {/* Series Curves, Step-Functions, Monotone Splines & Shaded Fills */}
+        {series.map((s) => {
+          if (s.points.length < 2) return null;
+          const isHighlighted = s.symbolId && activeSymbolId === s.symbolId;
+          const screenPts = s.points.map((p) => ({ sx: mapX(p.x), sy: mapY(p.y) }));
+          const pathD = buildSeriesPath(screenPts, s.interpolation);
+
+          const shouldFill = Boolean(s.fillToZero || s.fillArea);
+          const baseVal =
+            s.fillToZero && yDomain[0] <= 0 && yDomain[1] >= 0 ? 0 : yDomain[0];
+          const baseY = mapY(baseVal);
+          const areaD = shouldFill
+            ? `${pathD} L${screenPts[screenPts.length - 1].sx.toFixed(1)},${baseY.toFixed(1)} L${screenPts[0].sx.toFixed(1)},${baseY.toFixed(1)} Z`
+            : undefined;
+
+          const effectiveDash = s.dashArray || (s.dashed ? '4 3' : undefined);
+
+          return (
+            <g key={s.id}>
+              {areaD && (
+                <path
+                  d={areaD}
+                  fill={s.color}
+                  fillOpacity={s.fillOpacity ?? 0.12}
+                  style={{ mixBlendMode: 'multiply' }}
+                />
+              )}
+              <path
+                d={pathD}
+                fill="none"
+                stroke={s.color}
+                strokeWidth={
+                  isHighlighted ? (s.strokeWidth ?? 1.85) + 0.85 : s.strokeWidth ?? 1.85
+                }
+                strokeDasharray={effectiveDash}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              {/* Clinical / Censored Observation Tick Marks (+) */}
+              {s.censorPoints &&
+                s.censorPoints.map((cxVal, cIdx) => {
+                  const cyVal = interpolateSeriesY(s.points, cxVal, s.interpolation);
+                  if (cyVal === null) return null;
+                  const px = mapX(cxVal);
+                  const py = mapY(cyVal);
+                  return (
+                    <g key={`cens-${s.id}-${cIdx}`}>
+                      <line
+                        x1={px}
+                        y1={py - 3.2}
+                        x2={px}
+                        y2={py + 3.2}
+                        stroke={s.color}
+                        strokeWidth={1.25}
+                      />
+                      <line
+                        x1={px - 2.4}
+                        y1={py}
+                        x2={px + 2.4}
+                        y2={py}
+                        stroke={s.color}
+                        strokeWidth={1.25}
+                      />
+                    </g>
+                  );
+                })}
+            </g>
+          );
+        })}
+
+        {/* Empirical Telemetry Points with ±1σ Error Bars */}
+        {errorPoints.map((pt, idx) => {
+          const cx = mapX(pt.x);
+          const cy = mapY(pt.y);
+          const yTop = mapY(pt.y + pt.yErr);
+          const yBot = mapY(pt.y - pt.yErr);
+          const c = pt.color || 'oklch(0.32 0.04 255)';
+          return (
+            <g key={`errpt-${idx}`} opacity={0.88}>
+              <line x1={cx} y1={yTop} x2={cx} y2={yBot} stroke={c} strokeWidth={1.05} />
+              <line x1={cx - 2.5} y1={yTop} x2={cx + 2.5} y2={yTop} stroke={c} strokeWidth={1.05} />
+              <line x1={cx - 2.5} y1={yBot} x2={cx + 2.5} y2={yBot} stroke={c} strokeWidth={1.05} />
+              <circle cx={cx} cy={cy} r={2.3} fill="#FFFFFF" stroke={c} strokeWidth={1.25} />
+            </g>
+          );
+        })}
+      </g>
+
+      {/* Direct End-of-Line Series Labels (Tufte Style) */}
+      {series.map((s) => {
+        if (!s.endLabel || s.points.length === 0) return null;
+        const lastPt = s.points[s.points.length - 1];
+        const lx = width - pad.right + 5;
+        const ly = Math.max(pad.top + 6, Math.min(height - pad.bottom - 4, mapY(lastPt.y)));
+        return (
+          <text
+            key={`endlabel-${s.id}`}
+            x={lx}
+            y={ly + 3}
+            fontSize="9"
+            fontFamily="var(--ads-font-mono, monospace)"
+            fontWeight={600}
+            fill={s.color}
+          >
+            {s.endLabel}
+          </text>
+        );
+      })}
 
       {/* Threshold Annotations */}
       {thresholds.map((th, idx) => {
         if (th.axis === 'x') {
           const x = mapX(th.value);
+          const alignEnd = x > pad.left + innerW * 0.68;
           return (
             <g key={`th-${idx}`}>
               <line
@@ -580,11 +1000,13 @@ export const CartesianCanvas: React.FC<CartesianCanvasProps> = ({
               />
               {th.label && (
                 <text
-                  x={x + 4}
+                  x={alignEnd ? x - 5 : x + 5}
                   y={pad.top + 11}
-                  fontSize="9"
-                  fontFamily="Inter, -apple-system, sans-serif"
-                  fill={th.color || '#82807A'}
+                  textAnchor={alignEnd ? 'end' : 'start'}
+                  fontSize="8.8"
+                  fontFamily="var(--ads-font-mono, Inter, sans-serif)"
+                  fontWeight={500}
+                  fill={th.color || '#6E6C66'}
                 >
                   {th.label}
                 </text>
@@ -606,12 +1028,13 @@ export const CartesianCanvas: React.FC<CartesianCanvasProps> = ({
               />
               {th.label && (
                 <text
-                  x={width - pad.right - 4}
+                  x={width - pad.right - 5}
                   y={y - 4}
                   textAnchor="end"
-                  fontSize="9"
-                  fontFamily="Inter, -apple-system, sans-serif"
-                  fill={th.color || '#82807A'}
+                  fontSize="8.8"
+                  fontFamily="var(--ads-font-mono, Inter, sans-serif)"
+                  fontWeight={500}
+                  fill={th.color || '#6E6C66'}
                 >
                   {th.label}
                 </text>
@@ -621,116 +1044,238 @@ export const CartesianCanvas: React.FC<CartesianCanvasProps> = ({
         }
       })}
 
-      {/* Confidence Bands */}
-      {bands.map((band) => {
-        if (band.points.length < 2) return null;
-        const d = [
-          ...band.points.map(
-            (p, idx) =>
-              `${idx === 0 ? 'M' : 'L'}${mapX(p.x).toFixed(1)},${mapY(p.upper).toFixed(1)}`
-          ),
-          ...[...band.points]
-            .reverse()
-            .map((p) => `L${mapX(p.x).toFixed(1)},${mapY(p.lower).toFixed(1)}`),
-          'Z',
-        ].join(' ');
-        return (
-          <path
-            key={band.id}
-            d={d}
-            fill={band.color}
-            fillOpacity={band.opacity ?? 0.18}
-            style={{ mixBlendMode: 'multiply' }}
-          />
-        );
-      })}
-
-      {/* Series Curves & Optional Shaded Fills */}
-      {series.map((s) => {
-        if (s.points.length < 2) return null;
-        const isHighlighted = s.symbolId && activeSymbolId === s.symbolId;
-        const pathD = s.points
-          .map(
-            (p, idx) =>
-              `${idx === 0 ? 'M' : 'L'}${mapX(p.x).toFixed(1)},${mapY(p.y).toFixed(1)}`
-          )
-          .join(' ');
-
-        const zeroY = mapY(0);
-        const areaD = s.fillToZero
-          ? `${pathD} L${mapX(s.points[s.points.length - 1].x).toFixed(1)},${zeroY.toFixed(1)} L${mapX(s.points[0].x).toFixed(1)},${zeroY.toFixed(1)} Z`
-          : undefined;
+      {/* Scatter / Pareto Frontier Landmark Markers */}
+      {markers.map((mk, idx) => {
+        const cx = mapX(mk.x);
+        const cy = mapY(mk.y);
+        const r = mk.size ?? 3.6;
+        const c = mk.color || 'oklch(0.42 0.16 255)';
+        const pos = mk.labelPosition || (cx > pad.left + innerW * 0.72 ? 'left' : 'right');
+        const tx = pos === 'left' ? cx - r - 5 : pos === 'right' ? cx + r + 5 : cx;
+        const ty =
+          pos === 'top'
+            ? cy - r - 5
+            : pos === 'bottom'
+            ? cy + r + 10
+            : cy + 3;
+        const anchor = pos === 'left' ? 'end' : pos === 'right' ? 'start' : 'middle';
 
         return (
-          <g key={s.id}>
-            {areaD && (
-              <path
-                d={areaD}
-                fill={s.color}
-                fillOpacity={s.fillOpacity ?? 0.16}
-                style={{ mixBlendMode: 'multiply' }}
+          <g key={mk.id || `mk-${idx}`}>
+            {mk.halo && (
+              <circle cx={cx} cy={cy} r={r + 3.5} fill={c} fillOpacity={0.16} />
+            )}
+            {mk.shape === 'diamond' ? (
+              <polygon
+                points={`${cx},${cy - r - 0.8} ${cx + r + 0.8},${cy} ${cx},${cy + r + 0.8} ${cx - r - 0.8},${cy}`}
+                fill={c}
+                stroke="#FFFFFF"
+                strokeWidth={1.2}
+              />
+            ) : mk.shape === 'square' ? (
+              <rect
+                x={cx - r}
+                y={cy - r}
+                width={r * 2}
+                height={r * 2}
+                rx={1}
+                fill={c}
+                stroke="#FFFFFF"
+                strokeWidth={1.2}
+              />
+            ) : (
+              <circle
+                cx={cx}
+                cy={cy}
+                r={r}
+                fill={c}
+                stroke="#FFFFFF"
+                strokeWidth={1.3}
               />
             )}
-            <path
-              d={pathD}
-              fill="none"
-              stroke={s.color}
-              strokeWidth={isHighlighted ? (s.strokeWidth ?? 1.8) + 0.8 : s.strokeWidth ?? 1.8}
-              strokeDasharray={s.dashArray}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
+            {mk.label && (
+              <text
+                x={tx}
+                y={ty}
+                textAnchor={anchor}
+                fontSize="8.8"
+                fontFamily="var(--ads-font-chrome, Inter, sans-serif)"
+                fontWeight={600}
+                fill="#141413"
+                style={{
+                  paintOrder: 'stroke',
+                  stroke: 'rgba(255, 255, 255, 0.92)',
+                  strokeWidth: 2.5,
+                  strokeLinejoin: 'round',
+                }}
+              >
+                {mk.label}
+              </text>
+            )}
           </g>
         );
       })}
 
-      {/* Empirical Telemetry Points with ±1σ Error Bars */}
-      {errorPoints.map((pt, idx) => {
-        const cx = mapX(pt.x);
-        const cy = mapY(pt.y);
-        const yTop = mapY(pt.y + pt.yErr);
-        const yBot = mapY(pt.y - pt.yErr);
-        const c = pt.color || 'oklch(0.32 0.04 255)';
-        return (
-          <g key={`errpt-${idx}`} opacity={0.85}>
-            <line x1={cx} y1={yTop} x2={cx} y2={yBot} stroke={c} strokeWidth={1} />
-            <line x1={cx - 2.5} y1={yTop} x2={cx + 2.5} y2={yTop} stroke={c} strokeWidth={1} />
-            <line x1={cx - 2.5} y1={yBot} x2={cx + 2.5} y2={yBot} stroke={c} strokeWidth={1} />
-            <circle cx={cx} cy={cy} r={2.2} fill="#FFFFFF" stroke={c} strokeWidth={1.2} />
-          </g>
-        );
-      })}
+      {/* Axis Spines (Box, L-Frame, or Tufte Range-Frame) */}
+      <line
+        x1={xSpineMin}
+        y1={height - pad.bottom}
+        x2={xSpineMax}
+        y2={height - pad.bottom}
+        stroke="oklch(0.38 0.008 80)"
+        strokeWidth={1}
+      />
+      <line
+        x1={pad.left}
+        y1={ySpineMin}
+        x2={pad.left}
+        y2={ySpineMax}
+        stroke="oklch(0.38 0.008 80)"
+        strokeWidth={1}
+      />
+      {frameStyle === 'box' && (
+        <>
+          <line
+            x1={pad.left}
+            y1={pad.top}
+            x2={width - pad.right}
+            y2={pad.top}
+            stroke="oklch(0.66 0.006 80)"
+            strokeWidth={0.85}
+          />
+          <line
+            x1={width - pad.right}
+            y1={pad.top}
+            x2={width - pad.right}
+            y2={height - pad.bottom}
+            stroke="oklch(0.66 0.006 80)"
+            strokeWidth={0.85}
+          />
+        </>
+      )}
 
-      {/* Interactive Scrubbed Hairline & Active Particle */}
-      {scrubX !== undefined && activeReadout && (
+      {/* Axis Titles */}
+      {xAxisLabel && (
+        <text
+          x={pad.left + innerW / 2}
+          y={height - 5}
+          textAnchor="middle"
+          fontSize="10.2"
+          fontFamily="KaTeX_Main, Newsreader, serif"
+          fontStyle="italic"
+          fill="#3E3D3A"
+        >
+          {xAxisLabel}
+        </text>
+      )}
+      {yAxisLabel && (
+        <text
+          x={13}
+          y={pad.top + innerH / 2}
+          textAnchor="middle"
+          fontSize="10.2"
+          fontFamily="KaTeX_Main, Newsreader, serif"
+          fontStyle="italic"
+          fill="#3E3D3A"
+          transform={`rotate(-90, 13, ${pad.top + innerH / 2})`}
+        >
+          {yAxisLabel}
+        </text>
+      )}
+
+      {/* Interactive Scrubbed Hairline, Multi-Series Dots & Floating Readout Pill */}
+      {effectiveScrubX !== undefined && (
         <g>
           <line
-            x1={mapX(scrubX)}
+            x1={mapX(effectiveScrubX)}
             y1={pad.top}
-            x2={mapX(scrubX)}
+            x2={mapX(effectiveScrubX)}
             y2={height - pad.bottom}
-            stroke="oklch(0.55 0.19 32 / 0.65)"
+            stroke="oklch(0.52 0.18 32 / 0.65)"
             strokeWidth={1}
             strokeDasharray="2 2"
           />
-          {activeReadout.secondaryY !== undefined && (
-            <circle
-              cx={mapX(activeReadout.x)}
-              cy={mapY(activeReadout.secondaryY)}
-              r={3}
-              fill="oklch(0.48 0.14 160)"
-              stroke="#FFFFFF"
-              strokeWidth={1.2}
-            />
+
+          {activeReadout ? (
+            <>
+              {activeReadout.secondaryY !== undefined && (
+                <circle
+                  cx={mapX(activeReadout.x)}
+                  cy={mapY(activeReadout.secondaryY)}
+                  r={3.2}
+                  fill="oklch(0.48 0.14 160)"
+                  stroke="#FFFFFF"
+                  strokeWidth={1.3}
+                />
+              )}
+              <circle
+                cx={mapX(activeReadout.x)}
+                cy={mapY(activeReadout.y)}
+                r={4}
+                fill={activeReadout.color || 'oklch(0.42 0.16 255)'}
+                stroke="#FFFFFF"
+                strokeWidth={1.5}
+              />
+            </>
+          ) : (
+            crosshairIntersections.map((pt) => (
+              <circle
+                key={`xhair-dot-${pt.id}`}
+                cx={mapX(pt.x)}
+                cy={mapY(pt.y)}
+                r={3.6}
+                fill={pt.color}
+                stroke="#FFFFFF"
+                strokeWidth={1.4}
+              />
+            ))
           )}
-          <circle
-            cx={mapX(activeReadout.x)}
-            cy={mapY(activeReadout.y)}
-            r={4}
-            fill={activeReadout.color || 'oklch(0.42 0.16 255)'}
-            stroke="#FFFFFF"
-            strokeWidth={1.5}
-          />
+
+          {/* Floating Telemetry Readout Badge when hovering */}
+          {hoverX !== null && crosshairIntersections.length > 0 && (
+            <g
+              transform={`translate(${
+                mapX(hoverX) > pad.left + innerW * 0.58
+                  ? Math.max(pad.left + 4, mapX(hoverX) - 118)
+                  : Math.min(width - pad.right - 118, mapX(hoverX) + 8)
+              }, ${pad.top + 6})`}
+            >
+              <rect
+                x={0}
+                y={0}
+                width={112}
+                height={16 + crosshairIntersections.slice(0, 3).length * 12}
+                rx={3.5}
+                fill="rgba(255, 255, 255, 0.94)"
+                stroke="oklch(0.84 0.008 82)"
+                strokeWidth={0.8}
+              />
+              <text
+                x={6}
+                y={11}
+                fontSize="8.5"
+                fontFamily="var(--ads-font-mono, monospace)"
+                fontWeight={600}
+                fill="#4E4D49"
+              >
+                x = {xTickFormat ? xTickFormat( Number(hoverX.toFixed(2)) ) : hoverX.toFixed(2)}
+              </text>
+              {crosshairIntersections.slice(0, 3).map((item, idx) => (
+                <g key={`ro-${item.id}`} transform={`translate(6, ${22 + idx * 12})`}>
+                  <circle cx={3} cy={-2.5} r={2.5} fill={item.color} />
+                  <text
+                    x={9}
+                    y={0}
+                    fontSize="8.5"
+                    fontFamily="var(--ads-font-mono, monospace)"
+                    fill="#141413"
+                  >
+                    {item.y.toFixed(2).replace('-', '−')}
+                  </text>
+                </g>
+              ))}
+            </g>
+          )}
         </g>
       )}
     </svg>
@@ -742,8 +1287,8 @@ export const CartesianCanvas: React.FC<CartesianCanvasProps> = ({
  * 3. SYMPLECTIC PHASE-SPACE & VECTOR QUIVER ENGINE (<PhaseSpaceCanvas />)
  * ============================================================================
  * Renders a 2D vector field (dx/dt, dy/dt) with normalized quiver arrows,
- * Hamiltonian iso-energy contours, phase trajectories, and instantaneous
- * velocity tangent vector.
+ * Hamiltonian iso-energy contours, phase trajectories, instantaneous
+ * velocity tangent vector, and interactive click-to-seed RK4 test orbits!
  */
 export interface PhaseSpaceCanvasProps {
   width?: number;
@@ -763,7 +1308,7 @@ export interface PhaseSpaceCanvasProps {
 
 export const PhaseSpaceCanvas: React.FC<PhaseSpaceCanvasProps> = ({
   width = 250,
-  height = 235,
+  height = 240,
   xDomain,
   yDomain,
   xAxisLabel = 'x',
@@ -776,14 +1321,27 @@ export const PhaseSpaceCanvas: React.FC<PhaseSpaceCanvasProps> = ({
   vectorField,
   contourRadii = [0.4, 0.8, 1.1],
 }) => {
-  const pad = { top: 16, right: 16, bottom: 38, left: 36 };
+  const [seededStarts, setSeededStarts] = useState<Array<{ x: number; y: number }>>([]);
+  const [hoverCoord, setHoverCoord] = useState<{ x: number; y: number } | null>(null);
+
+  const pad = { top: 16, right: 16, bottom: 38, left: 38 };
   const innerW = width - pad.left - pad.right;
   const innerH = height - pad.top - pad.bottom;
+
+  const clipId = useMemo(
+    () => `ads-phase-clip-${Math.random().toString(36).slice(2, 9)}`,
+    []
+  );
 
   const mapX = (xVal: number) =>
     pad.left + ((xVal - xDomain[0]) / (xDomain[1] - xDomain[0])) * innerW;
   const mapY = (yVal: number) =>
     pad.top + ((yDomain[1] - yVal) / (yDomain[1] - yDomain[0])) * innerH;
+
+  const unmapX = (px: number) =>
+    xDomain[0] + Math.max(0, Math.min(1, (px - pad.left) / innerW)) * (xDomain[1] - xDomain[0]);
+  const unmapY = (py: number) =>
+    yDomain[1] - Math.max(0, Math.min(1, (py - pad.top) / innerH)) * (yDomain[1] - yDomain[0]);
 
   const trajPath = trajectory
     .map(
@@ -791,6 +1349,44 @@ export const PhaseSpaceCanvas: React.FC<PhaseSpaceCanvasProps> = ({
         `${idx === 0 ? 'M' : 'L'}${mapX(p.x).toFixed(1)},${mapY(p.y).toFixed(1)}`
     )
     .join(' ');
+
+  // Integrate user-seeded test particles via 4th-order Runge-Kutta (RK4)
+  const seededOrbits = useMemo(() => {
+    if (!vectorField || seededStarts.length === 0) return [];
+    const dt = 0.045;
+    const steps = 95;
+    return seededStarts.map((start) => {
+      const pts: Array<{ x: number; y: number }> = [{ x: start.x, y: start.y }];
+      let cx = start.x;
+      let cy = start.y;
+      for (let s = 0; s < steps; s++) {
+        const [k1x, k1y] = vectorField(cx, cy);
+        const [k2x, k2y] = vectorField(cx + 0.5 * dt * k1x, cy + 0.5 * dt * k1y);
+        const [k3x, k3y] = vectorField(cx + 0.5 * dt * k2x, cy + 0.5 * dt * k2y);
+        const [k4x, k4y] = vectorField(cx + dt * k3x, cy + dt * k3y);
+        cx += (dt / 6) * (k1x + 2 * k2x + 2 * k3x + k4x);
+        cy += (dt / 6) * (k1y + 2 * k2y + 2 * k3y + k4y);
+        if (
+          !Number.isFinite(cx) ||
+          !Number.isFinite(cy) ||
+          Math.abs(cx) > Math.max(20, Math.abs(xDomain[1]) * 3) ||
+          Math.abs(cy) > Math.max(20, Math.abs(yDomain[1]) * 3)
+        ) {
+          break;
+        }
+        pts.push({ x: cx, y: cy });
+      }
+      return {
+        start,
+        path: pts
+          .map(
+            (p, idx) =>
+              `${idx === 0 ? 'M' : 'L'}${mapX(p.x).toFixed(1)},${mapY(p.y).toFixed(1)}`
+          )
+          .join(' '),
+      };
+    });
+  }, [seededStarts, vectorField, xDomain, yDomain, innerW, innerH]);
 
   // Generate 2D Quiver Grid
   const quiverArrows = useMemo(() => {
@@ -819,7 +1415,6 @@ export const PhaseSpaceCanvas: React.FC<PhaseSpaceCanvasProps> = ({
 
         const cx = mapX(xv);
         const cy = mapY(yv);
-        // Screen-space direction (invert dy because SVG y is downward)
         const ux = dx / mag;
         const uy = -dy / mag;
         const len = Math.min(11, 5.5 + Math.min(1, mag / 4) * 5.5);
@@ -829,7 +1424,6 @@ export const PhaseSpaceCanvas: React.FC<PhaseSpaceCanvasProps> = ({
         const x2 = cx + ux * (len * 0.55);
         const y2 = cy + uy * (len * 0.55);
 
-        // Arrowhead wings
         const wingLen = 3.2;
         const px = -uy;
         const py = ux;
@@ -866,120 +1460,202 @@ export const PhaseSpaceCanvas: React.FC<PhaseSpaceCanvasProps> = ({
         width: '100%',
         height: 'auto',
         display: 'block',
+        cursor: vectorField ? 'crosshair' : 'default',
         userSelect: 'none',
       }}
+      onClick={(e) => {
+        if (!vectorField) return;
+        const rect = e.currentTarget.getBoundingClientRect();
+        const px = ((e.clientX - rect.left) / rect.width) * width;
+        const py = ((e.clientY - rect.top) / rect.height) * height;
+        if (px < pad.left || px > width - pad.right || py < pad.top || py > height - pad.bottom) {
+          return;
+        }
+        const sx = unmapX(px);
+        const sy = unmapY(py);
+        setSeededStarts((prev) => [...prev.slice(-4), { x: sx, y: sy }]);
+      }}
+      onPointerMove={(e) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const px = ((e.clientX - rect.left) / rect.width) * width;
+        const py = ((e.clientY - rect.top) / rect.height) * height;
+        if (px >= pad.left && px <= width - pad.right && py >= pad.top && py <= height - pad.bottom) {
+          setHoverCoord({ x: unmapX(px), y: unmapY(py) });
+        } else {
+          setHoverCoord(null);
+        }
+      }}
+      onPointerLeave={() => setHoverCoord(null)}
     >
-      {/* Box Frame */}
+      <defs>
+        <clipPath id={clipId}>
+          <rect x={pad.left} y={pad.top} width={innerW} height={innerH} />
+        </clipPath>
+      </defs>
+
+      {/* Subtle Porcelain Well */}
       <rect
         x={pad.left}
         y={pad.top}
         width={innerW}
         height={innerH}
-        fill="none"
-        stroke="oklch(0.68 0.006 80)"
+        fill="oklch(0.996 0.002 85 / 0.65)"
+        stroke="oklch(0.66 0.006 80)"
         strokeWidth={0.85}
       />
 
-      {/* Equilibrium Crosshairs */}
-      <line
-        x1={pad.left}
-        y1={eqY}
-        x2={width - pad.right}
-        y2={eqY}
-        stroke="oklch(0.88 0.005 80)"
-        strokeWidth={0.85}
-      />
-      <line
-        x1={eqX}
-        y1={pad.top}
-        x2={eqX}
-        y2={height - pad.bottom}
-        stroke="oklch(0.88 0.005 80)"
-        strokeWidth={0.85}
-      />
-
-      {/* Iso-Energy Contours */}
-      {contourRadii.map((r, i) => (
-        <ellipse
-          key={`contour-${i}`}
-          cx={eqX}
-          cy={eqY}
-          rx={r * scaleRx}
-          ry={r * scaleRy}
-          fill="none"
-          stroke="oklch(0.91 0.005 80)"
-          strokeWidth={0.75}
-          strokeDasharray="2 2"
+      <g clipPath={`url(#${clipId})`}>
+        {/* Equilibrium Crosshairs */}
+        <line
+          x1={pad.left}
+          y1={eqY}
+          x2={width - pad.right}
+          y2={eqY}
+          stroke="oklch(0.88 0.005 80)"
+          strokeWidth={0.85}
         />
-      ))}
+        <line
+          x1={eqX}
+          y1={pad.top}
+          x2={eqX}
+          y2={height - pad.bottom}
+          stroke="oklch(0.88 0.005 80)"
+          strokeWidth={0.85}
+        />
 
-      {/* 2D Vector Quiver Field */}
-      {quiverArrows.map((a, idx) => (
-        <g key={`q-${idx}`} opacity={0.32 + a.magNorm * 0.28}>
-          <line
-            x1={a.x1}
-            y1={a.y1}
-            x2={a.x2}
-            y2={a.y2}
-            stroke="oklch(0.52 0.04 250)"
-            strokeWidth={0.85}
-          />
-          <polyline
-            points={`${a.hx1.toFixed(1)},${a.hy1.toFixed(1)} ${a.x2.toFixed(1)},${a.y2.toFixed(1)} ${a.hx2.toFixed(1)},${a.hy2.toFixed(1)}`}
+        {/* Iso-Energy Contours */}
+        {contourRadii.map((r, i) => (
+          <ellipse
+            key={`contour-${i}`}
+            cx={eqX}
+            cy={eqY}
+            rx={r * scaleRx}
+            ry={r * scaleRy}
             fill="none"
-            stroke="oklch(0.52 0.04 250)"
-            strokeWidth={0.85}
+            stroke="oklch(0.90 0.005 80)"
+            strokeWidth={0.75}
+            strokeDasharray="2 2"
           />
-        </g>
-      ))}
+        ))}
 
-      {/* Active Instantaneous Lyapunov Energy Shell */}
-      {energyRadius !== undefined && energyRadius > 0.01 && (
-        <ellipse
-          cx={eqX}
-          cy={eqY}
-          rx={energyRadius * scaleRx}
-          ry={energyRadius * scaleRy}
-          fill="oklch(0.92 0.04 160 / 0.18)"
-          stroke="oklch(0.48 0.14 160 / 0.65)"
-          strokeWidth={1}
-          strokeDasharray="3 2"
-        />
-      )}
-
-      {/* Phase Trajectory */}
-      <path
-        d={trajPath}
-        fill="none"
-        stroke="oklch(0.42 0.16 255)"
-        strokeWidth={1.75}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-
-      {/* Active Particle & Tangent Velocity Vector */}
-      {activePoint && (
-        <g>
-          {activePoint.vx !== undefined && activePoint.vy !== undefined && (
+        {/* 2D Vector Quiver Field */}
+        {quiverArrows.map((a, idx) => (
+          <g key={`q-${idx}`} opacity={0.34 + a.magNorm * 0.3}>
             <line
-              x1={mapX(activePoint.x)}
-              y1={mapY(activePoint.y)}
-              x2={mapX(activePoint.x) + activePoint.vx * 18}
-              y2={mapY(activePoint.y) - activePoint.vy * 18}
-              stroke="oklch(0.55 0.19 32)"
-              strokeWidth={1.4}
+              x1={a.x1}
+              y1={a.y1}
+              x2={a.x2}
+              y2={a.y2}
+              stroke="oklch(0.50 0.04 250)"
+              strokeWidth={0.85}
             />
-          )}
-          <circle
-            cx={mapX(activePoint.x)}
-            cy={mapY(activePoint.y)}
-            r={4.2}
-            fill="oklch(0.55 0.19 32)"
-            stroke="#FFFFFF"
-            strokeWidth={1.5}
+            <polyline
+              points={`${a.hx1.toFixed(1)},${a.hy1.toFixed(1)} ${a.x2.toFixed(1)},${a.y2.toFixed(1)} ${a.hx2.toFixed(1)},${a.hy2.toFixed(1)}`}
+              fill="none"
+              stroke="oklch(0.50 0.04 250)"
+              strokeWidth={0.85}
+            />
+          </g>
+        ))}
+
+        {/* Active Instantaneous Lyapunov Energy Shell */}
+        {energyRadius !== undefined && energyRadius > 0.01 && (
+          <ellipse
+            cx={eqX}
+            cy={eqY}
+            rx={energyRadius * scaleRx}
+            ry={energyRadius * scaleRy}
+            fill="oklch(0.92 0.04 160 / 0.16)"
+            stroke="oklch(0.48 0.14 160 / 0.65)"
+            strokeWidth={1}
+            strokeDasharray="3 2"
           />
-        </g>
-      )}
+        )}
+
+        {/* User-Seeded RK4 Test Trajectories */}
+        {seededOrbits.map((orb, idx) => (
+          <g key={`seed-orb-${idx}`}>
+            <path
+              d={orb.path}
+              fill="none"
+              stroke="oklch(0.52 0.17 310)"
+              strokeWidth={1.35}
+              strokeDasharray="3 1.5"
+              opacity={0.82}
+            />
+            <circle
+              cx={mapX(orb.start.x)}
+              cy={mapY(orb.start.y)}
+              r={2.8}
+              fill="oklch(0.52 0.17 310)"
+              stroke="#FFFFFF"
+              strokeWidth={1}
+            />
+          </g>
+        ))}
+
+        {/* Primary Phase Trajectory */}
+        <path
+          d={trajPath}
+          fill="none"
+          stroke="oklch(0.42 0.16 255)"
+          strokeWidth={1.85}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+
+        {/* Active Particle & Tangent Velocity Vector */}
+        {activePoint && (
+          <g>
+            {activePoint.vx !== undefined && activePoint.vy !== undefined && (
+              <line
+                x1={mapX(activePoint.x)}
+                y1={mapY(activePoint.y)}
+                x2={mapX(activePoint.x) + activePoint.vx * 18}
+                y2={mapY(activePoint.y) - activePoint.vy * 18}
+                stroke="oklch(0.55 0.19 32)"
+                strokeWidth={1.45}
+              />
+            )}
+            <circle
+              cx={mapX(activePoint.x)}
+              cy={mapY(activePoint.y)}
+              r={4.2}
+              fill="oklch(0.55 0.19 32)"
+              stroke="#FFFFFF"
+              strokeWidth={1.5}
+            />
+          </g>
+        )}
+      </g>
+
+      {/* Interactive Seed Hint / Coordinate Readout */}
+      {hoverCoord ? (
+        <text
+          x={pad.left + 5}
+          y={pad.top + 11}
+          fontSize="8.2"
+          fontFamily="var(--ads-font-mono, monospace)"
+          fill="#4E4D49"
+        >
+          ({hoverCoord.x.toFixed(2)}, {hoverCoord.y.toFixed(2)}) · Click to seed RK4
+        </text>
+      ) : seededOrbits.length > 0 ? (
+        <text
+          x={pad.left + 5}
+          y={pad.top + 11}
+          fontSize="8.2"
+          fontFamily="var(--ads-font-mono, monospace)"
+          fill="oklch(0.48 0.16 310)"
+          style={{ cursor: 'pointer' }}
+          onClick={(e) => {
+            e.stopPropagation();
+            setSeededStarts([]);
+          }}
+        >
+          {seededOrbits.length} RK4 orbit{seededOrbits.length > 1 ? 's' : ''} · [Reset]
+        </text>
+      ) : null}
 
       {/* Axis Labels */}
       <text
@@ -989,19 +1665,19 @@ export const PhaseSpaceCanvas: React.FC<PhaseSpaceCanvasProps> = ({
         fontSize="10"
         fontFamily="KaTeX_Main, Newsreader, serif"
         fontStyle="italic"
-        fill="#4E4D49"
+        fill="#3E3D3A"
       >
         {xAxisLabel}
       </text>
       <text
-        x={11}
+        x={12}
         y={pad.top + innerH / 2}
         textAnchor="middle"
         fontSize="10"
         fontFamily="KaTeX_Main, Newsreader, serif"
         fontStyle="italic"
-        fill="#4E4D49"
-        transform={`rotate(-90, 11, ${pad.top + innerH / 2})`}
+        fill="#3E3D3A"
+        transform={`rotate(-90, 12, ${pad.top + innerH / 2})`}
       >
         {yAxisLabel}
       </text>
@@ -1015,7 +1691,7 @@ export const PhaseSpaceCanvas: React.FC<PhaseSpaceCanvasProps> = ({
  * ============================================================================
  * Visualizes characteristic eigenvalues λ₁,₂ = −ζω₀ ± iω₀√(1−ζ²) in the
  * complex Argand plane with stability boundary Re(s)=0, iso-ω₀ semicircle,
- * damping angle θ = arccos(ζ), and full root-locus branches.
+ * damping angle θ = arccos(ζ) arc, and interactive pole telemetry readout.
  */
 export interface ComplexPlaneCanvasProps {
   width?: number;
@@ -1026,10 +1702,12 @@ export interface ComplexPlaneCanvasProps {
 
 export const ComplexPlaneCanvas: React.FC<ComplexPlaneCanvasProps> = ({
   width = 250,
-  height = 235,
+  height = 240,
   zeta,
   omega0,
 }) => {
+  const [hovered, setHovered] = useState(false);
+
   const pad = { top: 16, right: 16, bottom: 38, left: 38 };
   const innerW = width - pad.left - pad.right;
   const innerH = height - pad.top - pad.bottom;
@@ -1071,6 +1749,11 @@ export const ComplexPlaneCanvas: React.FC<ComplexPlaneCanvasProps> = ({
   }
   const semiPath = semiPoints.join(' ');
 
+  const qFactor = (1 / (2 * Math.max(0.01, zeta))).toFixed(2);
+  const settlingTau = (4 / Math.max(0.05, zeta * omega0)).toFixed(2);
+  const dampingDeg =
+    zeta < 1 ? ((Math.acos(zeta) * 180) / Math.PI).toFixed(0) : '0';
+
   return (
     <svg
       viewBox={`0 0 ${width} ${height}`}
@@ -1080,6 +1763,8 @@ export const ComplexPlaneCanvas: React.FC<ComplexPlaneCanvasProps> = ({
         display: 'block',
         userSelect: 'none',
       }}
+      onPointerEnter={() => setHovered(true)}
+      onPointerLeave={() => setHovered(false)}
     >
       {/* Stable LHP shading (Re(s) < 0) */}
       <rect
@@ -1087,7 +1772,7 @@ export const ComplexPlaneCanvas: React.FC<ComplexPlaneCanvasProps> = ({
         y={pad.top}
         width={Math.max(0, originX - pad.left)}
         height={innerH}
-        fill="oklch(0.965 0.012 160 / 0.45)"
+        fill="oklch(0.968 0.012 160 / 0.45)"
       />
       {/* Unstable RHP shading (Re(s) > 0) */}
       <rect
@@ -1095,7 +1780,7 @@ export const ComplexPlaneCanvas: React.FC<ComplexPlaneCanvasProps> = ({
         y={pad.top}
         width={Math.max(0, width - pad.right - originX)}
         height={innerH}
-        fill="oklch(0.965 0.015 32 / 0.28)"
+        fill="oklch(0.968 0.015 32 / 0.28)"
       />
 
       {/* Box Frame */}
@@ -1105,8 +1790,19 @@ export const ComplexPlaneCanvas: React.FC<ComplexPlaneCanvasProps> = ({
         width={innerW}
         height={innerH}
         fill="none"
-        stroke="oklch(0.68 0.006 80)"
+        stroke="oklch(0.66 0.006 80)"
         strokeWidth={0.85}
+      />
+
+      {/* Constant Decay Rate Vertical Line Re(s) = -ζω₀ */}
+      <line
+        x1={mapRe(p1.re)}
+        y1={pad.top}
+        x2={mapRe(p1.re)}
+        y2={height - pad.bottom}
+        stroke="oklch(0.48 0.14 160 / 0.4)"
+        strokeWidth={0.85}
+        strokeDasharray="2 2"
       />
 
       {/* Real & Imaginary Axes */}
@@ -1115,7 +1811,7 @@ export const ComplexPlaneCanvas: React.FC<ComplexPlaneCanvasProps> = ({
         y1={originY}
         x2={width - pad.right}
         y2={originY}
-        stroke="oklch(0.75 0.008 80)"
+        stroke="oklch(0.74 0.008 80)"
         strokeWidth={0.9}
       />
       <line
@@ -1132,8 +1828,8 @@ export const ComplexPlaneCanvas: React.FC<ComplexPlaneCanvasProps> = ({
       <path
         d={semiPath}
         fill="none"
-        stroke="oklch(0.42 0.16 255 / 0.45)"
-        strokeWidth={1.2}
+        stroke="oklch(0.42 0.16 255 / 0.48)"
+        strokeWidth={1.25}
         strokeDasharray="3 2"
       />
 
@@ -1143,7 +1839,7 @@ export const ComplexPlaneCanvas: React.FC<ComplexPlaneCanvasProps> = ({
         y1={originY}
         x2={originX}
         y2={originY}
-        stroke="oklch(0.42 0.16 255 / 0.35)"
+        stroke="oklch(0.42 0.16 255 / 0.32)"
         strokeWidth={2}
       />
 
@@ -1153,16 +1849,16 @@ export const ComplexPlaneCanvas: React.FC<ComplexPlaneCanvasProps> = ({
         y1={originY}
         x2={mapRe(p1.re)}
         y2={mapIm(p1.im)}
-        stroke="oklch(0.55 0.19 32 / 0.6)"
-        strokeWidth={1}
+        stroke="oklch(0.55 0.19 32 / 0.65)"
+        strokeWidth={1.05}
       />
       <line
         x1={originX}
         y1={originY}
         x2={mapRe(p2.re)}
         y2={mapIm(p2.im)}
-        stroke="oklch(0.55 0.19 32 / 0.6)"
-        strokeWidth={1}
+        stroke="oklch(0.55 0.19 32 / 0.65)"
+        strokeWidth={1.05}
       />
 
       {/* Pole Cross Markers (×) for λ₁ and λ₂ */}
@@ -1172,6 +1868,7 @@ export const ComplexPlaneCanvas: React.FC<ComplexPlaneCanvasProps> = ({
         const s = 4.2;
         return (
           <g key={`pole-${idx}`}>
+            <circle cx={cx} cy={cy} r={6.5} fill="oklch(0.52 0.20 32 / 0.12)" />
             <line
               x1={cx - s}
               y1={cy - s}
@@ -1192,23 +1889,25 @@ export const ComplexPlaneCanvas: React.FC<ComplexPlaneCanvasProps> = ({
         );
       })}
 
-      {/* Annotations */}
+      {/* Annotations & Spectral Readout */}
       <text
         x={pad.left + 5}
-        y={pad.top + 12}
-        fontSize="8.5"
-        fontFamily="Inter, -apple-system, sans-serif"
+        y={pad.top + 11}
+        fontSize="8.2"
+        fontFamily="var(--ads-font-mono, monospace)"
         fill="#4E4D49"
       >
-        LHP (Stable)
+        {hovered
+          ? `Q=${qFactor} · θ=${dampingDeg}° · τ_s≈${settlingTau}s`
+          : `LHP Stable · Q=${qFactor}`}
       </text>
       <text
         x={mapRe(-omega0)}
         y={originY + 13}
         textAnchor="middle"
         fontSize="8.5"
-        fontFamily="Inter, -apple-system, sans-serif"
-        fill="#6E6C66"
+        fontFamily="var(--ads-font-mono, monospace)"
+        fill="#65635D"
       >
         −ω₀
       </text>
@@ -1221,19 +1920,19 @@ export const ComplexPlaneCanvas: React.FC<ComplexPlaneCanvasProps> = ({
         fontSize="10"
         fontFamily="KaTeX_Main, Newsreader, serif"
         fontStyle="italic"
-        fill="#4E4D49"
+        fill="#3E3D3A"
       >
         Re(λ) [s⁻¹]
       </text>
       <text
-        x={11}
+        x={12}
         y={pad.top + innerH / 2}
         textAnchor="middle"
         fontSize="10"
         fontFamily="KaTeX_Main, Newsreader, serif"
         fontStyle="italic"
-        fill="#4E4D49"
-        transform={`rotate(-90, 11, ${pad.top + innerH / 2})`}
+        fill="#3E3D3A"
+        transform={`rotate(-90, 12, ${pad.top + innerH / 2})`}
       >
         Im(λ) [rad·s⁻¹]
       </text>
@@ -3026,5 +3725,917 @@ ${texLines}
         </span>
       </div>
     </div>
+  );
+};
+
+/**
+ * ============================================================================
+ * 7. 2D MATRIX, CORRELATION & ATTENTION HEATMAP (<HeatmapMatrix />)
+ * ============================================================================
+ * Perceptually uniform OKLCH colormaps, tabular cell values, interactive
+ * row/column crosshair highlighting, marginal summary bars, and colorbar scale.
+ */
+export type HeatmapColormap =
+  | 'cobalt'
+  | 'diverging'
+  | 'viridis'
+  | 'vermilion'
+  | 'emerald';
+
+export interface HeatmapMatrixProps {
+  title?: string;
+  subtitle?: string;
+  rowLabels: string[];
+  colLabels: string[];
+  values: number[][];
+  domain?: [number, number];
+  colormap?: HeatmapColormap;
+  valueFormat?: (val: number) => string;
+  unit?: string;
+  showValues?: boolean;
+  showMarginals?: boolean;
+}
+
+function sampleOklchColormap(
+  norm: number,
+  colormap: HeatmapColormap
+): { bg: string; text: string } {
+  const t = Math.max(0, Math.min(1, norm));
+  if (colormap === 'diverging') {
+    // -1 (Cobalt 255) -> 0 (Warm Paper 82) -> +1 (Vermilion 32)
+    if (t < 0.5) {
+      const s = (0.5 - t) * 2; // 0 to 1 towards negative
+      const L = 0.975 - s * 0.44;
+      const C = 0.005 + s * 0.155;
+      return {
+        bg: `oklch(${L.toFixed(3)} ${C.toFixed(3)} 255)`,
+        text: L < 0.68 ? '#FFFFFF' : '#141413',
+      };
+    } else {
+      const s = (t - 0.5) * 2; // 0 to 1 towards positive
+      const L = 0.975 - s * 0.42;
+      const C = 0.005 + s * 0.175;
+      return {
+        bg: `oklch(${L.toFixed(3)} ${C.toFixed(3)} 32)`,
+        text: L < 0.68 ? '#FFFFFF' : '#141413',
+      };
+    }
+  }
+
+  if (colormap === 'viridis') {
+    const L = 0.96 - t * 0.52;
+    const C = 0.04 + Math.sin(t * Math.PI) * 0.12 + t * 0.04;
+    const H = 115 + t * 155; // Warm lime/gold to deep teal/indigo
+    return {
+      bg: `oklch(${L.toFixed(3)} ${C.toFixed(3)} ${H.toFixed(1)})`,
+      text: L < 0.66 ? '#FFFFFF' : '#141413',
+    };
+  }
+
+  if (colormap === 'vermilion') {
+    const L = 0.975 - t * 0.46;
+    const C = 0.008 + t * 0.18;
+    return {
+      bg: `oklch(${L.toFixed(3)} ${C.toFixed(3)} 32)`,
+      text: L < 0.67 ? '#FFFFFF' : '#141413',
+    };
+  }
+
+  if (colormap === 'emerald') {
+    const L = 0.975 - t * 0.46;
+    const C = 0.008 + t * 0.145;
+    return {
+      bg: `oklch(${L.toFixed(3)} ${C.toFixed(3)} 160)`,
+      text: L < 0.67 ? '#FFFFFF' : '#141413',
+    };
+  }
+
+  // Default: 'cobalt'
+  const L = 0.978 - t * 0.48;
+  const C = 0.006 + t * 0.16;
+  return {
+    bg: `oklch(${L.toFixed(3)} ${C.toFixed(3)} 255)`,
+    text: L < 0.67 ? '#FFFFFF' : '#141413',
+  };
+}
+
+export const HeatmapMatrix: React.FC<HeatmapMatrixProps> = ({
+  title,
+  subtitle,
+  rowLabels,
+  colLabels,
+  values,
+  domain,
+  colormap = 'cobalt',
+  valueFormat,
+  unit = '',
+  showValues = true,
+  showMarginals = true,
+}) => {
+  const [activeCell, setActiveCell] = useState<{ r: number; c: number } | null>(null);
+  const [activeMap, setActiveMap] = useState<HeatmapColormap>(colormap);
+
+  const flatVals = useMemo(() => values.flat(), [values]);
+  const minVal = domain ? domain[0] : Math.min(...flatVals);
+  const maxVal = domain ? domain[1] : Math.max(...flatVals);
+  const span = Math.max(1e-6, maxVal - minVal);
+
+  const rowMeans = useMemo(
+    () =>
+      values.map((row) =>
+        row.length > 0 ? row.reduce((a, b) => a + b, 0) / row.length : 0
+      ),
+    [values]
+  );
+
+  const fmt = (v: number) =>
+    valueFormat ? valueFormat(v) : v.toFixed(2).replace('-', '−');
+
+  return (
+    <div className="ads-ui" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      {/* Header & Colormap Switcher */}
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '8px',
+        }}
+      >
+        <div>
+          {title && (
+            <div style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--ads-ink-carbon)' }}>
+              {title}
+            </div>
+          )}
+          {subtitle && (
+            <div style={{ fontSize: '11px', color: 'var(--ads-ink-pencil)' }}>{subtitle}</div>
+          )}
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          {activeCell !== null && values[activeCell.r]?.[activeCell.c] !== undefined && (
+            <span
+              style={{
+                fontFamily: 'var(--ads-font-mono)',
+                fontSize: '11px',
+                padding: '2px 8px',
+                borderRadius: '4px',
+                backgroundColor: 'var(--ads-paper-well, #F7F5F0)',
+                border: '1px solid var(--ads-ink-hairline)',
+                color: 'var(--ads-ink-carbon)',
+              }}
+            >
+              [{rowLabels[activeCell.r]} × {colLabels[activeCell.c]}] ={' '}
+              <strong>
+                {fmt(values[activeCell.r][activeCell.c])}
+                {unit}
+              </strong>
+            </span>
+          )}
+
+          <div className="ads-pill-group">
+            {(
+              [
+                { id: 'cobalt', label: 'Cobalt' },
+                { id: 'diverging', label: 'Diverging' },
+                { id: 'viridis', label: 'Viridis' },
+                { id: 'vermilion', label: 'Thermal' },
+              ] as const
+            ).map((cm) => (
+              <button
+                key={cm.id}
+                type="button"
+                data-active={activeMap === cm.id ? 'true' : 'false'}
+                className="ads-pill-btn"
+                onClick={() => setActiveMap(cm.id)}
+              >
+                {cm.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Matrix Grid + Marginal Summary Bars */}
+      <div style={{ overflowX: 'auto' }}>
+        <table
+          style={{
+            width: '100%',
+            borderCollapse: 'separate',
+            borderSpacing: '2px',
+            fontSize: '11.5px',
+          }}
+        >
+          <thead>
+            <tr>
+              <th
+                style={{
+                  textAlign: 'left',
+                  padding: '4px 8px',
+                  fontSize: '10.5px',
+                  fontWeight: 600,
+                  color: 'var(--ads-ink-pencil)',
+                }}
+              >
+                Matrix ({rowLabels.length}×{colLabels.length})
+              </th>
+              {colLabels.map((cLab, cIdx) => {
+                const isColHi = activeCell?.c === cIdx;
+                return (
+                  <th
+                    key={`col-${cIdx}`}
+                    style={{
+                      textAlign: 'center',
+                      padding: '4px 6px',
+                      fontSize: '11px',
+                      fontWeight: isColHi ? 700 : 600,
+                      color: isColHi
+                        ? 'var(--ads-accent-compute)'
+                        : 'var(--ads-ink-graphite)',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {cLab}
+                  </th>
+                );
+              })}
+              {showMarginals && (
+                <th
+                  style={{
+                    textAlign: 'right',
+                    padding: '4px 8px',
+                    fontSize: '10.5px',
+                    fontWeight: 600,
+                    color: 'var(--ads-ink-pencil)',
+                  }}
+                >
+                  Row Mean
+                </th>
+              )}
+            </tr>
+          </thead>
+          <tbody>
+            {rowLabels.map((rLab, rIdx) => {
+              const isRowHi = activeCell?.r === rIdx;
+              const rMean = rowMeans[rIdx] ?? 0;
+              const rMeanPct = Math.max(
+                4,
+                Math.min(100, ((rMean - minVal) / span) * 100)
+              );
+
+              return (
+                <tr key={`row-${rIdx}`}>
+                  <td
+                    style={{
+                      padding: '6px 8px',
+                      fontWeight: isRowHi ? 700 : 500,
+                      color: isRowHi
+                        ? 'var(--ads-accent-compute)'
+                        : 'var(--ads-ink-carbon)',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {rLab}
+                  </td>
+
+                  {(values[rIdx] || []).map((val, cIdx) => {
+                    const norm = (val - minVal) / span;
+                    const { bg, text } = sampleOklchColormap(norm, activeMap);
+                    const isSelected =
+                      activeCell?.r === rIdx && activeCell?.c === cIdx;
+
+                    return (
+                      <td
+                        key={`cell-${rIdx}-${cIdx}`}
+                        onMouseEnter={() => setActiveCell({ r: rIdx, c: cIdx })}
+                        onMouseLeave={() => setActiveCell(null)}
+                        style={{
+                          padding: '7px 8px',
+                          textAlign: 'center',
+                          fontFamily: 'var(--ads-font-mono)',
+                          fontVariantNumeric: 'tabular-nums',
+                          fontSize: '11px',
+                          fontWeight: isSelected ? 700 : 500,
+                          backgroundColor: bg,
+                          color: text,
+                          borderRadius: '3.5px',
+                          outline: isSelected
+                            ? '2px solid var(--ads-ink-carbon, #141413)'
+                            : 'none',
+                          cursor: 'crosshair',
+                          transition: 'transform 80ms ease',
+                        }}
+                      >
+                        {showValues ? `${fmt(val)}${unit}` : ''}
+                      </td>
+                    );
+                  })}
+
+                  {showMarginals && (
+                    <td
+                      style={{
+                        padding: '4px 8px',
+                        textAlign: 'right',
+                        fontFamily: 'var(--ads-font-mono)',
+                        fontSize: '11px',
+                        color: 'var(--ads-ink-graphite)',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                        }}
+                      >
+                        <span
+                          style={{
+                            width: '36px',
+                            height: '5px',
+                            borderRadius: '2.5px',
+                            backgroundColor: 'oklch(0.92 0.005 82)',
+                            overflow: 'hidden',
+                            display: 'inline-block',
+                          }}
+                        >
+                          <span
+                            style={{
+                              display: 'block',
+                              width: `${rMeanPct}%`,
+                              height: '100%',
+                              backgroundColor: 'oklch(0.45 0.145 255)',
+                            }}
+                          />
+                        </span>
+                        <span>
+                          {fmt(rMean)}
+                          {unit}
+                        </span>
+                      </div>
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Continuous Colorbar Scale Footer */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '10px',
+          paddingTop: '4px',
+          fontSize: '10.5px',
+          fontFamily: 'var(--ads-font-mono)',
+          color: 'var(--ads-ink-pencil)',
+        }}
+      >
+        <span>
+          Scale Domain: [{fmt(minVal)}
+          {unit}, {fmt(maxVal)}
+          {unit}]
+        </span>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <span>{fmt(minVal)}</span>
+          <div
+            style={{
+              width: '120px',
+              height: '7px',
+              borderRadius: '3.5px',
+              border: '1px solid var(--ads-ink-hairline)',
+              background: `linear-gradient(90deg, ${[0, 0.25, 0.5, 0.75, 1]
+                .map((s) => `${sampleOklchColormap(s, activeMap).bg} ${s * 100}%`)
+                .join(', ')})`,
+            }}
+          />
+          <span>{fmt(maxVal)}</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/**
+ * ============================================================================
+ * 8. RAINCLOUD KDE VIOLIN & FOREST CI PLOT (<DistributionPlot />)
+ * ============================================================================
+ * Dual-mode statistical distribution & clinical/benchmark effect-size engine:
+ * - mode="raincloud": Half-violin Gaussian KDE + median/IQR box + jittered samples
+ * - mode="forest": Publication Forest Plot (NEJM/Cochrane standard) with null
+ *   reference line, sample-weight squares, 95% CI whiskers, and pooled diamond.
+ */
+export interface DistributionGroup {
+  id: string;
+  label: string;
+  sublabel?: string;
+  color?: string;
+  samples?: number[];
+  estimate?: number;
+  ciLower?: number;
+  ciUpper?: number;
+  weight?: number;
+  pValue?: string;
+}
+
+export interface DistributionPlotProps {
+  mode?: 'raincloud' | 'forest';
+  title?: string;
+  xAxisLabel?: string;
+  domain?: [number, number];
+  nullValue?: number;
+  unit?: string;
+  groups: DistributionGroup[];
+  pooledSummary?: {
+    label: string;
+    estimate: number;
+    ciLower: number;
+    ciUpper: number;
+  };
+}
+
+export const DistributionPlot: React.FC<DistributionPlotProps> = ({
+  mode = 'raincloud',
+  title,
+  xAxisLabel,
+  domain,
+  nullValue = 1.0,
+  unit = '',
+  groups,
+  pooledSummary,
+}) => {
+  const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
+
+  // Compute statistics for each group
+  const computedGroups = useMemo(() => {
+    return groups.map((g, gIdx) => {
+      const color =
+        g.color ||
+        [
+          'oklch(0.45 0.15 255)',
+          'oklch(0.46 0.14 160)',
+          'oklch(0.52 0.18 32)',
+          'oklch(0.48 0.16 310)',
+          'oklch(0.52 0.14 75)',
+        ][gIdx % 5];
+
+      if (g.samples && g.samples.length > 0) {
+        const sorted = [...g.samples].sort((a, b) => a - b);
+        const n = sorted.length;
+        const min = sorted[0];
+        const max = sorted[n - 1];
+        const q25 = sorted[Math.floor(n * 0.25)];
+        const median = sorted[Math.floor(n * 0.5)];
+        const q75 = sorted[Math.floor(n * 0.75)];
+        const mean = sorted.reduce((a, b) => a + b, 0) / n;
+        const std = Math.sqrt(
+          sorted.reduce((acc, v) => acc + Math.pow(v - mean, 2), 0) / Math.max(1, n - 1)
+        );
+        return {
+          ...g,
+          color,
+          min,
+          max,
+          q25,
+          median,
+          q75,
+          mean,
+          std,
+          estimate: g.estimate ?? median,
+          ciLower: g.ciLower ?? q25,
+          ciUpper: g.ciUpper ?? q75,
+        };
+      }
+
+      const est = g.estimate ?? 1.0;
+      const lo = g.ciLower ?? est - 0.15;
+      const hi = g.ciUpper ?? est + 0.15;
+      return {
+        ...g,
+        color,
+        min: lo,
+        max: hi,
+        q25: lo,
+        median: est,
+        q75: hi,
+        mean: est,
+        std: Math.max(0.05, (hi - lo) / 3.92),
+        estimate: est,
+        ciLower: lo,
+        ciUpper: hi,
+      };
+    });
+  }, [groups]);
+
+  const xDom: [number, number] = useMemo(() => {
+    if (domain) return domain;
+    const allMin = Math.min(...computedGroups.map((g) => g.min));
+    const allMax = Math.max(...computedGroups.map((g) => g.max));
+    const pad = Math.max(0.1, (allMax - allMin) * 0.12);
+    return [allMin - pad, allMax + pad];
+  }, [domain, computedGroups]);
+
+  const width = 620;
+  const rowH = mode === 'raincloud' ? 52 : 36;
+  const extraPoolH = pooledSummary && mode === 'forest' ? 38 : 0;
+  const pad = {
+    top: title ? 28 : 14,
+    left: 168,
+    right: mode === 'forest' ? 148 : 96,
+    bottom: 36,
+  };
+  const innerW = width - pad.left - pad.right;
+  const innerH = computedGroups.length * rowH + extraPoolH;
+  const height = pad.top + innerH + pad.bottom;
+
+  const mapX = (v: number) =>
+    pad.left + ((v - xDom[0]) / Math.max(1e-6, xDom[1] - xDom[0])) * innerW;
+
+  const ticks = useMemo(() => {
+    const count = 5;
+    return Array.from(
+      { length: count },
+      (_, i) => xDom[0] + (i / (count - 1)) * (xDom[1] - xDom[0])
+    );
+  }, [xDom]);
+
+  return (
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      style={{ width: '100%', height: 'auto', display: 'block', userSelect: 'none' }}
+    >
+      {title && (
+        <text
+          x={pad.left}
+          y={16}
+          fontSize="10.5"
+          fontFamily="var(--ads-font-chrome, Inter, sans-serif)"
+          fontWeight={600}
+          fill="#141413"
+        >
+          {title}
+        </text>
+      )}
+
+      {/* Plot Well Background */}
+      <rect
+        x={pad.left}
+        y={pad.top}
+        width={innerW}
+        height={innerH}
+        fill="oklch(0.996 0.002 85 / 0.65)"
+        stroke="oklch(0.84 0.006 80)"
+        strokeWidth={0.8}
+      />
+
+      {/* Vertical Gridlines & X Ticks */}
+      {ticks.map((tk, idx) => {
+        const x = mapX(tk);
+        return (
+          <g key={`dtk-${idx}`}>
+            <line
+              x1={x}
+              y1={pad.top}
+              x2={x}
+              y2={pad.top + innerH}
+              stroke="oklch(0.935 0.004 82)"
+              strokeWidth={0.75}
+            />
+            <line
+              x1={x}
+              y1={pad.top + innerH - 4}
+              x2={x}
+              y2={pad.top + innerH}
+              stroke="oklch(0.42 0.008 80)"
+              strokeWidth={0.9}
+            />
+            <text
+              x={x}
+              y={pad.top + innerH + 14}
+              textAnchor="middle"
+              fontSize="9"
+              fontFamily="var(--ads-font-mono, monospace)"
+              fill="#65635D"
+            >
+              {tk.toFixed(mode === 'forest' ? 2 : 1).replace('-', '−')}
+              {unit}
+            </text>
+          </g>
+        );
+      })}
+
+      {/* Null-Effect Reference Line (For Forest Plots or Zero Threshold) */}
+      {nullValue >= xDom[0] && nullValue <= xDom[1] && (
+        <g>
+          <line
+            x1={mapX(nullValue)}
+            y1={pad.top}
+            x2={mapX(nullValue)}
+            y2={pad.top + innerH}
+            stroke="oklch(0.45 0.01 80)"
+            strokeWidth={1.1}
+            strokeDasharray="3 2"
+          />
+        </g>
+      )}
+
+      {/* Rows */}
+      {computedGroups.map((g, idx) => {
+        const rowTop = pad.top + idx * rowH;
+        const cy = rowTop + rowH * (mode === 'raincloud' ? 0.64 : 0.5);
+        const isHi = activeGroupId === g.id;
+
+        // Build Gaussian KDE half-violin curve if mode === 'raincloud'
+        let kdePath = '';
+        if (mode === 'raincloud') {
+          const samples = g.samples && g.samples.length > 0 ? g.samples : [g.q25, g.median, g.q75];
+          const bw = Math.max(0.08, g.std * 0.65);
+          const nSteps = 36;
+          const densities: Array<{ x: number; d: number }> = [];
+          let maxD = 1e-6;
+          for (let s = 0; s <= nSteps; s++) {
+            const xv = xDom[0] + (s / nSteps) * (xDom[1] - xDom[0]);
+            let sum = 0;
+            for (const sv of samples) {
+              const u = (xv - sv) / bw;
+              sum += Math.exp(-0.5 * u * u);
+            }
+            if (sum > maxD) maxD = sum;
+            densities.push({ x: xv, d: sum });
+          }
+          const maxViolinH = rowH * 0.44;
+          const curvePts = densities.map(
+            (pt, k) =>
+              `${k === 0 ? 'M' : 'L'}${mapX(pt.x).toFixed(1)},${(
+                cy -
+                4 -
+                (pt.d / maxD) * maxViolinH
+              ).toFixed(1)}`
+          );
+          kdePath = `${curvePts.join(' ')} L${mapX(xDom[1]).toFixed(1)},${(cy - 4).toFixed(
+            1
+          )} L${mapX(xDom[0]).toFixed(1)},${(cy - 4).toFixed(1)} Z`;
+        }
+
+        return (
+          <g
+            key={g.id}
+            onPointerEnter={() => setActiveGroupId(g.id)}
+            onPointerLeave={() => setActiveGroupId(null)}
+            style={{ cursor: 'pointer' }}
+          >
+            {/* Row Hover Highlight */}
+            {isHi && (
+              <rect
+                x={4}
+                y={rowTop + 2}
+                width={width - 8}
+                height={rowH - 4}
+                rx={4}
+                fill="oklch(0.94 0.02 255 / 0.35)"
+              />
+            )}
+
+            {/* Row Divider */}
+            {idx > 0 && (
+              <line
+                x1={pad.left}
+                y1={rowTop}
+                x2={pad.left + innerW}
+                y2={rowTop}
+                stroke="oklch(0.945 0.004 82)"
+                strokeWidth={0.7}
+              />
+            )}
+
+            {/* Left Group Label */}
+            <text
+              x={pad.left - 10}
+              y={cy - (g.sublabel ? 2 : -3)}
+              textAnchor="end"
+              fontSize="10"
+              fontFamily="var(--ads-font-chrome, Inter, sans-serif)"
+              fontWeight={isHi ? 700 : 600}
+              fill="#141413"
+            >
+              {g.label.length > 25 ? `${g.label.slice(0, 24)}…` : g.label}
+            </text>
+            {g.sublabel && (
+              <text
+                x={pad.left - 10}
+                y={cy + 10}
+                textAnchor="end"
+                fontSize="8.5"
+                fontFamily="var(--ads-font-mono, monospace)"
+                fill="#82807A"
+              >
+                {g.sublabel}
+              </text>
+            )}
+
+            {mode === 'raincloud' ? (
+              <>
+                {/* Half-Violin KDE Cloud */}
+                <path
+                  d={kdePath}
+                  fill={g.color}
+                  fillOpacity={0.22}
+                  stroke={g.color}
+                  strokeWidth={1.25}
+                />
+
+                {/* Whisker Line [min, max] */}
+                <line
+                  x1={mapX(g.min)}
+                  y1={cy}
+                  x2={mapX(g.max)}
+                  y2={cy}
+                  stroke={g.color}
+                  strokeWidth={1.15}
+                />
+
+                {/* IQR Box [q25, q75] */}
+                <rect
+                  x={mapX(g.q25)}
+                  y={cy - 3.5}
+                  width={Math.max(2, mapX(g.q75) - mapX(g.q25))}
+                  height={7}
+                  rx={1.5}
+                  fill="#FFFFFF"
+                  stroke={g.color}
+                  strokeWidth={1.4}
+                />
+
+                {/* Median Line */}
+                <line
+                  x1={mapX(g.median)}
+                  y1={cy - 4}
+                  x2={mapX(g.median)}
+                  y2={cy + 4}
+                  stroke={g.color}
+                  strokeWidth={2.2}
+                />
+
+                {/* Deterministic Jittered Raindrop Samples */}
+                {(g.samples || []).map((sv, sIdx) => {
+                  const jitterY = cy + 8 + ((sIdx * 7) % 7);
+                  return (
+                    <circle
+                      key={`samp-${sIdx}`}
+                      cx={mapX(sv)}
+                      cy={jitterY}
+                      r={1.8}
+                      fill={g.color}
+                      fillOpacity={0.68}
+                    />
+                  );
+                })}
+
+                {/* Right Summary Readout */}
+                <text
+                  x={pad.left + innerW + 8}
+                  y={cy + 3}
+                  fontSize="9.2"
+                  fontFamily="var(--ads-font-mono, monospace)"
+                  fontWeight={600}
+                  fill="#141413"
+                >
+                  {g.median.toFixed(1)}
+                  {unit}{' '}
+                  <tspan fontWeight={400} fill="#82807A" fontSize="8.5">
+                    ±{g.std.toFixed(1)}
+                  </tspan>
+                </text>
+              </>
+            ) : (
+              <>
+                {/* Forest Plot 95% CI Whisker */}
+                <line
+                  x1={mapX(g.ciLower)}
+                  y1={cy}
+                  x2={mapX(g.ciUpper)}
+                  y2={cy}
+                  stroke={g.color}
+                  strokeWidth={1.5}
+                />
+                <line
+                  x1={mapX(g.ciLower)}
+                  y1={cy - 3.5}
+                  x2={mapX(g.ciLower)}
+                  y2={cy + 3.5}
+                  stroke={g.color}
+                  strokeWidth={1.3}
+                />
+                <line
+                  x1={mapX(g.ciUpper)}
+                  y1={cy - 3.5}
+                  x2={mapX(g.ciUpper)}
+                  y2={cy + 3.5}
+                  stroke={g.color}
+                  strokeWidth={1.3}
+                />
+
+                {/* Proportional Weight Square */}
+                {(() => {
+                  const sq = Math.max(5, Math.min(10, (g.weight ?? 20) * 0.28));
+                  return (
+                    <rect
+                      x={mapX(g.estimate) - sq / 2}
+                      y={cy - sq / 2}
+                      width={sq}
+                      height={sq}
+                      rx={1}
+                      fill={g.color}
+                      stroke="#FFFFFF"
+                      strokeWidth={1}
+                    />
+                  );
+                })()}
+
+                {/* Right Tabular Estimate [95% CI] Readout */}
+                <text
+                  x={pad.left + innerW + 8}
+                  y={cy + 3.2}
+                  fontSize="9"
+                  fontFamily="var(--ads-font-mono, monospace)"
+                  fontWeight={600}
+                  fill="#141413"
+                >
+                  {g.estimate.toFixed(2)}{' '}
+                  <tspan fontWeight={400} fill="#6E6C66">
+                    [{g.ciLower.toFixed(2)}, {g.ciUpper.toFixed(2)}]
+                  </tspan>
+                </text>
+              </>
+            )}
+          </g>
+        );
+      })}
+
+      {/* Pooled Summary Diamond (For Forest Plot) */}
+      {pooledSummary && mode === 'forest' && (
+        <g transform={`translate(0, ${pad.top + computedGroups.length * rowH})`}>
+          <line
+            x1={pad.left}
+            y1={0}
+            x2={pad.left + innerW}
+            y2={0}
+            stroke="oklch(0.75 0.008 80)"
+            strokeWidth={1}
+          />
+          <text
+            x={pad.left - 10}
+            y={22}
+            textAnchor="end"
+            fontSize="10"
+            fontFamily="var(--ads-font-chrome, Inter, sans-serif)"
+            fontWeight={700}
+            fill="#141413"
+          >
+            {pooledSummary.label}
+          </text>
+          <polygon
+            points={`${mapX(pooledSummary.ciLower)},19 ${mapX(
+              pooledSummary.estimate
+            )},12 ${mapX(pooledSummary.ciUpper)},19 ${mapX(pooledSummary.estimate)},26`}
+            fill="oklch(0.52 0.19 32)"
+            stroke="#FFFFFF"
+            strokeWidth={1}
+          />
+          <text
+            x={pad.left + innerW + 8}
+            y={22}
+            fontSize="9.2"
+            fontFamily="var(--ads-font-mono, monospace)"
+            fontWeight={700}
+            fill="oklch(0.48 0.19 32)"
+          >
+            {pooledSummary.estimate.toFixed(2)} [{pooledSummary.ciLower.toFixed(2)},{' '}
+            {pooledSummary.ciUpper.toFixed(2)}]
+          </text>
+        </g>
+      )}
+
+      {/* X Axis Label */}
+      {xAxisLabel && (
+        <text
+          x={pad.left + innerW / 2}
+          y={height - 5}
+          textAnchor="middle"
+          fontSize="10.2"
+          fontFamily="KaTeX_Main, Newsreader, serif"
+          fontStyle="italic"
+          fill="#3E3D3A"
+        >
+          {xAxisLabel}
+        </text>
+      )}
+    </svg>
   );
 };

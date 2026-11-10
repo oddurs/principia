@@ -42,6 +42,8 @@ import {
   ScientificPlot,
   BooktabsTable,
   UnitValue,
+  HeatmapMatrix,
+  DistributionPlot,
 } from '../primitives/datavis/ScienceAndVis';
 import {
   OmniComputeBar,
@@ -442,29 +444,38 @@ const STORY_CATALOG: StoryMeta[] = [
     id: 'scientific-plot',
     num: '11',
     title: 'Scientific Plotting Suite',
-    exports: ['ScientificPlot', 'CartesianCanvas', 'PhaseSpaceCanvas', 'ComplexPlaneCanvas'],
+    exports: [
+      'ScientificPlot',
+      'CartesianCanvas',
+      'PhaseSpaceCanvas',
+      'ComplexPlaneCanvas',
+      'HeatmapMatrix',
+      'DistributionPlot',
+    ],
     pillar: 'DataVis & Tabular',
     summary:
-      'Multi-panel vector scientific plotting workbench combining Cartesian trajectories, symplectic phase-space quiver fields, complex s-plane root loci, Bode response, and pgfplots TikZ export.',
+      'Multi-panel vector scientific & quantitative plotting workbench combining Cartesian trajectories, interactive RK4 phase-space quiver fields, complex s-plane root loci, 2D OKLCH heatmaps, Raincloud KDE violins, and Forest CI plots.',
     anatomyNotes: [
-      'Supports 3 physical models out of the box: Damped Harmonic Oscillator, Quantum Eigenstates, and Lotka–Volterra.',
-      'Includes inward metrological ticks, click-to-lock coordinate crosshairs, and 1-click SVG / TikZ export.',
+      'Click anywhere inside PhaseSpaceCanvas to seed live 4th-order Runge–Kutta (RK4) test particle trajectories.',
+      'Includes HeatmapMatrix (with 4 perceptually uniform OKLCH colormaps) and DistributionPlot (Raincloud KDE violins + Cochrane/NEJM Forest CI plots).',
     ],
     scenarios: [
-      { id: 'oscillator', label: 'Damped Oscillator' },
+      { id: 'oscillator', label: 'Damped Oscillator (3-Panel)' },
       { id: 'quantum', label: 'Quantum Eigenstates' },
       { id: 'lotka', label: 'Lotka–Volterra Orbits' },
+      { id: 'heatmap', label: '2D OKLCH Heatmap Matrix' },
+      { id: 'distributions', label: 'Raincloud KDE & Forest Plot' },
     ],
-    jsxSnippet: `import { ScientificPlot } from '@principia/core';
+    jsxSnippet: `import { ScientificPlot, HeatmapMatrix, DistributionPlot } from '@principia/core';
 
-<ScientificPlot
-  model="damped-oscillator"
-  zeta={0.25}
-  omega0={4.0}
-/>`,
+<ScientificPlot model="damped-oscillator" zeta={0.25} omega0={4.0} />
+<HeatmapMatrix rowLabels={...} colLabels={...} values={...} colormap="cobalt" />
+<DistributionPlot mode="raincloud" groups={...} />`,
     propsSpec: [
-      { prop: 'model', type: "'damped-oscillator' | 'quantum-eigenstates' | 'lotka-volterra'", defaultVal: "'damped-oscillator'", description: 'Selects physical model and coupled differential equations.' },
-      { prop: 'zeta / omega0', type: 'number', defaultVal: '0.25 / 4.0', description: 'Live parameters driving time-domain, phase portrait, and s-plane poles.' },
+      { prop: 'model (ScientificPlot)', type: "'damped-oscillator' | 'quantum-eigenstates' | 'lotka-volterra'", defaultVal: "'damped-oscillator'", description: 'Selects physical model and coupled differential equations.' },
+      { prop: 'interpolation (PlotSeries)', type: "'linear' | 'step-after' | 'monotone'", defaultVal: "'linear'", description: 'Supports Kaplan–Meier step curves with censorPoints or smooth monotone splines.' },
+      { prop: 'colormap (HeatmapMatrix)', type: "'cobalt' | 'diverging' | 'viridis' | 'vermilion'", defaultVal: "'cobalt'", description: 'Perceptually uniform OKLCH colormap with auto-contrast cell labels.' },
+      { prop: 'mode (DistributionPlot)', type: "'raincloud' | 'forest'", defaultVal: "'raincloud'", description: 'Switches between half-violin KDE + IQR boxplots and clinical/meta-analysis Forest plots.' },
     ],
   },
   {
@@ -2179,33 +2190,170 @@ export const StorybookPage: React.FC<StorybookPageProps> = ({
                 )}
 
                 {/* STORY 7: Scientific Plotting Suite */}
-                {activeStory === 'scientific-plot' && (
-                  <ScientificPlot
-                    model={
-                      activeScenarioId === 'quantum'
-                        ? 'quantum-eigenstates'
-                        : activeScenarioId === 'lotka'
-                        ? 'lotka-volterra'
-                        : 'damped-oscillator'
-                    }
-                    zeta={zeta}
-                    omega0={omega0}
+                {activeStory === 'scientific-plot' &&
+                  (activeScenarioId === 'oscillator' ||
+                    activeScenarioId === 'quantum' ||
+                    activeScenarioId === 'lotka') && (
+                    <ScientificPlot
+                      model={
+                        activeScenarioId === 'quantum'
+                          ? 'quantum-eigenstates'
+                          : activeScenarioId === 'lotka'
+                          ? 'lotka-volterra'
+                          : 'damped-oscillator'
+                      }
+                      zeta={zeta}
+                      omega0={omega0}
+                    />
+                  )}
+
+                {activeStory === 'scientific-plot' && activeScenarioId === 'heatmap' && (
+                  <HeatmapMatrix
+                    title="Cross-Benchmark Capability & Spectral Coupling Matrix"
+                    subtitle="Hover any cell to inspect coordinates, or switch OKLCH perceptually uniform colormaps"
+                    rowLabels={[
+                      'Principia-Reasoner-v3',
+                      'Claude 3.7 Sonnet (Ext)',
+                      'OpenAI o3-mini-high',
+                      'DeepSeek-R1-Zero (671B)',
+                      'Llama-3.3-70B-Instruct',
+                    ]}
+                    colLabels={['MMLU-Pro', 'GPQA-D', 'MATH-500', 'HumanEval', 'Lean-4 Proof']}
+                    values={[
+                      [91.8, 80.4, 96.7, 94.2, 88.5],
+                      [89.4, 78.2, 93.8, 93.5, 81.2],
+                      [87.9, 76.8, 95.4, 92.8, 84.0],
+                      [86.5, 74.1, 94.9, 89.6, 82.4],
+                      [81.2, 61.5, 78.4, 84.0, 58.6],
+                    ]}
+                    domain={[55, 100]}
+                    unit="%"
+                    colormap="cobalt"
                   />
+                )}
+
+                {activeStory === 'scientific-plot' && activeScenarioId === 'distributions' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                    <DistributionPlot
+                      mode="raincloud"
+                      title="a. Raincloud KDE + IQR Boxplot — MATH-500 Pass@1 Across 12 Evaluation Seeds (%)"
+                      xAxisLabel="MATH-500 Pass@1 Accuracy (%)"
+                      domain={[72, 100]}
+                      unit="%"
+                      groups={[
+                        {
+                          id: 'principia-v3',
+                          label: 'Principia-Reasoner-v3',
+                          sublabel: 'n=12 seeds · CAS Verified',
+                          color: 'oklch(0.45 0.15 255)',
+                          samples: [95.2, 95.8, 96.1, 96.4, 96.6, 96.7, 96.8, 97.0, 97.1, 97.4, 97.6, 98.1],
+                        },
+                        {
+                          id: 'o3-mini',
+                          label: 'OpenAI o3-mini-high',
+                          sublabel: 'n=12 seeds · CoT-32k',
+                          color: 'oklch(0.46 0.14 160)',
+                          samples: [93.4, 94.1, 94.6, 95.0, 95.2, 95.4, 95.5, 95.8, 96.0, 96.3, 96.5, 97.0],
+                        },
+                        {
+                          id: 'claude-37',
+                          label: 'Claude 3.7 Sonnet',
+                          sublabel: 'n=12 seeds · Extended',
+                          color: 'oklch(0.52 0.18 32)',
+                          samples: [91.5, 92.2, 92.8, 93.2, 93.6, 93.8, 94.0, 94.3, 94.7, 95.0, 95.3, 95.8],
+                        },
+                        {
+                          id: 'llama-70b',
+                          label: 'Llama-3.3-70B-Instruct',
+                          sublabel: 'n=12 seeds · Dense 0-shot',
+                          color: 'oklch(0.48 0.16 310)',
+                          samples: [74.8, 76.1, 77.0, 77.5, 78.1, 78.4, 78.6, 79.2, 79.8, 80.4, 81.0, 82.1],
+                        },
+                      ]}
+                    />
+
+                    <DistributionPlot
+                      mode="forest"
+                      title="b. Publication Forest Plot — Stratified Subgroup Hazard Ratios (95% CI)"
+                      xAxisLabel="Hazard Ratio HR (Log-Proportional Scale · HR < 1.0 Favors Treatment)"
+                      domain={[0.15, 1.25]}
+                      nullValue={1.0}
+                      groups={[
+                        {
+                          id: 'itt',
+                          label: 'All Randomized (ITT)',
+                          sublabel: 'N = 1,240 · p < 0.0001',
+                          estimate: 0.56,
+                          ciLower: 0.45,
+                          ciUpper: 0.69,
+                          weight: 34,
+                          color: 'oklch(0.45 0.15 255)',
+                        },
+                        {
+                          id: 'pdl1',
+                          label: 'PD-L1 TPS ≥ 50%',
+                          sublabel: 'n = 618 · p < 0.0001',
+                          estimate: 0.48,
+                          ciLower: 0.35,
+                          ciUpper: 0.66,
+                          weight: 26,
+                          color: 'oklch(0.46 0.14 160)',
+                        },
+                        {
+                          id: 'ctdna',
+                          label: 'ctDNA MRD Cleared',
+                          sublabel: 'n = 485 · p < 0.0001',
+                          estimate: 0.39,
+                          ciLower: 0.26,
+                          ciUpper: 0.58,
+                          weight: 22,
+                          color: 'oklch(0.48 0.16 310)',
+                        },
+                        {
+                          id: 'stage-iiic',
+                          label: 'Stage IIIC High-Risk',
+                          sublabel: 'n = 422 · p = 0.0034',
+                          estimate: 0.63,
+                          ciLower: 0.46,
+                          ciUpper: 0.86,
+                          weight: 18,
+                          color: 'oklch(0.52 0.18 32)',
+                        },
+                      ]}
+                      pooledSummary={{
+                        label: 'Pooled Random-Effects Summary',
+                        estimate: 0.52,
+                        ciLower: 0.43,
+                        ciUpper: 0.62,
+                      }}
+                    />
+                  </div>
                 )}
 
                 {/* STORY 8: Sparklines & Dimensional Units */}
                 {activeStory === 'sparkline-unit' && activeScenarioId === 'prose-inline' && (
-                  <div className="ads-prose" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <div className="ads-prose" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     <div>
-                      Word-sized Tufte sparkline inline in prose:{' '}
+                      Word-sized Tufte sparkline with interquartile band &amp; min/max markers:{' '}
                       <Sparkline
                         data={sparklineSample}
                         domain={[-1, 1]}
-                        width={84}
+                        width={92}
                         height={22}
+                        showMinMax
+                        showBand
                         color="oklch(0.42 0.16 255)"
                       />{' '}
-                      showing damped ringdown at <InlineMath latex={`\\zeta = ${zeta.toFixed(2)}`} />.
+                      and discrete micro-histogram bar sparkline:{' '}
+                      <Sparkline
+                        data={sparklineSample.filter((_, idx) => idx % 2 === 0)}
+                        domain={[-1, 1]}
+                        width={84}
+                        height={20}
+                        variant="bar"
+                        color="oklch(0.46 0.14 160)"
+                      />{' '}
+                      at <InlineMath latex={`\\zeta = ${zeta.toFixed(2)}`} />.
                     </div>
                     <div>
                       Interactive dimensional unit cycler (click chip to cycle SI ↔ CGS ↔ Natural
