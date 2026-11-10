@@ -145,26 +145,30 @@ export const PlatformShell: React.FC = () => {
   }, []);
 
   const dynamicRootVars: React.CSSProperties = {
+    '--ads-hero-size':
+      density === 'manuscript' ? '46px' : density === 'workbench' ? '40px' : '32px',
     '--ads-title-size':
-      density === 'manuscript' ? '34px' : density === 'workbench' ? '28px' : '24px',
+      density === 'manuscript' ? '36px' : density === 'workbench' ? '30px' : '24px',
+    '--ads-h2-size':
+      density === 'manuscript' ? '26px' : density === 'workbench' ? '23px' : '19px',
     '--ads-heading-size':
-      density === 'manuscript' ? '20px' : density === 'workbench' ? '18px' : '16px',
+      density === 'manuscript' ? '21px' : density === 'workbench' ? '18.5px' : '16px',
     '--ads-prose-size':
-      density === 'manuscript' ? '17.5px' : density === 'workbench' ? '16px' : '14.5px',
+      density === 'manuscript' ? '18px' : density === 'workbench' ? '16.5px' : '15px',
     '--ads-prose-lh':
-      density === 'manuscript' ? '1.68' : density === 'workbench' ? '1.62' : '1.56',
+      density === 'manuscript' ? '32px' : density === 'workbench' ? '28px' : '24px',
     '--ads-secondary-prose-size':
-      density === 'manuscript' ? '15px' : density === 'workbench' ? '14px' : '13px',
+      density === 'manuscript' ? '15.5px' : density === 'workbench' ? '14.5px' : '13.5px',
     '--ads-baseline-step':
-      density === 'manuscript' ? '29px' : density === 'workbench' ? '26px' : '23px',
+      density === 'manuscript' ? '32px' : density === 'workbench' ? '28px' : '24px',
     '--ads-pod-padding-y':
-      density === 'manuscript' ? '24px' : density === 'workbench' ? '20px' : '14px',
+      density === 'manuscript' ? '28px' : density === 'workbench' ? '24px' : '16px',
     '--ads-pod-padding-x':
-      density === 'manuscript' ? '28px' : density === 'workbench' ? '24px' : '18px',
+      density === 'manuscript' ? '32px' : density === 'workbench' ? '28px' : '20px',
     '--ads-pod-gap':
-      density === 'manuscript' ? '22px' : density === 'workbench' ? '18px' : '14px',
+      density === 'manuscript' ? '28px' : density === 'workbench' ? '24px' : '16px',
     '--ads-block-margin-y':
-      density === 'manuscript' ? '20px' : density === 'workbench' ? '16px' : '12px',
+      density === 'manuscript' ? '24px' : density === 'workbench' ? '20px' : '16px',
     '--ads-paper-desk':
       material === 'swiss-lab'
         ? 'oklch(0.968 0.002 250)'
@@ -422,16 +426,16 @@ export const PlatformShell: React.FC = () => {
           position: 'sticky',
           top: 0,
           zIndex: 50,
-          height: '52px',
+          height: '56px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: '16px',
-          padding: '0 24px',
+          padding: '0 28px',
           backgroundColor: 'oklch(1 0 0 / 0.96)',
           backdropFilter: 'blur(12px)',
           borderBottom: '1px solid var(--ads-ink-hairline, #E4E2DC)',
-          fontSize: '12.5px',
+          fontSize: '13px',
         }}
       >
         {/* Left: Brand Crest & Package Name */}

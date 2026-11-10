@@ -491,7 +491,7 @@ export const Card: React.FC<CardProps> = ({
   subtitle,
   headerRight,
   footer,
-  padding = '20px 22px',
+  padding = '24px',
   children,
   style,
 }) => (
@@ -504,7 +504,7 @@ export const Card: React.FC<CardProps> = ({
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: '12px',
-          padding: '13px 22px',
+          padding: '15px 24px',
           background:
             'linear-gradient(180deg, oklch(0.996 0.002 85) 0%, oklch(0.986 0.003 83) 100%)',
           borderBottom: '1px solid var(--ads-ink-whisper, oklch(0.942 0.004 82))',
@@ -514,8 +514,10 @@ export const Card: React.FC<CardProps> = ({
           {title && (
             <div
               style={{
-                fontSize: '14px',
+                fontSize: '15px',
+                lineHeight: '20px',
                 fontWeight: 600,
+                letterSpacing: '-0.014em',
                 color: 'var(--ads-ink-carbon, #141413)',
               }}
             >
@@ -525,7 +527,8 @@ export const Card: React.FC<CardProps> = ({
           {subtitle && (
             <div
               style={{
-                fontSize: '12px',
+                fontSize: '12.5px',
+                lineHeight: '18px',
                 marginTop: '2px',
                 color: 'var(--ads-ink-pencil, #85837D)',
               }}
@@ -542,10 +545,11 @@ export const Card: React.FC<CardProps> = ({
       <div
         className="ads-ui"
         style={{
-          padding: '11px 22px',
+          padding: '12px 24px',
           backgroundColor: 'var(--ads-paper-well, #F7F5F0)',
           borderTop: '1px solid var(--ads-ink-whisper, oklch(0.942 0.004 82))',
-          fontSize: '12px',
+          fontSize: '12.5px',
+          lineHeight: '18px',
           color: 'var(--ads-ink-graphite, #4E4D49)',
         }}
       >
@@ -579,11 +583,11 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   <div
     className="ads-card ads-ui"
     style={{
-      padding: '18px 20px',
+      padding: '20px 24px',
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'space-between',
-      gap: '10px',
+      gap: '12px',
     }}
   >
     <div
@@ -597,9 +601,10 @@ export const MetricCard: React.FC<MetricCardProps> = ({
       <span
         style={{
           fontSize: '11.5px',
+          lineHeight: '16px',
           fontWeight: 600,
           textTransform: 'uppercase',
-          letterSpacing: '0.04em',
+          letterSpacing: '0.048em',
           color: 'var(--ads-ink-pencil, #85837D)',
         }}
       >
@@ -641,10 +646,11 @@ export const MetricCard: React.FC<MetricCardProps> = ({
         gap: '12px',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: '5px' }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
         <span
           style={{
-            fontSize: '26px',
+            fontSize: '28px',
+            lineHeight: '32px',
             fontWeight: 700,
             letterSpacing: '-0.025em',
             fontVariantNumeric: 'tabular-nums',

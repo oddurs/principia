@@ -393,9 +393,9 @@ export const EquationBlock: React.FC<EquationBlockProps> = ({
       className="ads-equation-container"
       style={{
         position: 'relative',
-        margin: '10px 0 12px 0',
-        padding: '8px 12px',
-        borderRadius: '5px',
+        margin: '16px 0',
+        padding: '12px 16px',
+        borderRadius: '6px',
         borderLeft: isHighlightedBySymbol
           ? `2.5px solid ${activeColor?.fg}`
           : '2.5px solid transparent',
@@ -576,14 +576,14 @@ export const FormalBlock: React.FC<FormalBlockProps> = ({
       className="ads-prose ads-equation-container"
       style={{
         position: 'relative',
-        margin: 'var(--ads-block-margin-y, 12px) 0',
-        padding: '10px 14px',
+        margin: 'var(--ads-block-margin-y, 20px) 0',
+        padding: '14px 18px',
         backgroundColor: 'var(--ads-paper-well, #F7F5F0)',
         borderTop: '1px solid var(--ads-ink-whisper, oklch(0.942 0.004 82))',
         borderRight: '1px solid var(--ads-ink-whisper, oklch(0.942 0.004 82))',
         borderBottom: '1px solid var(--ads-ink-whisper, oklch(0.942 0.004 82))',
-        borderLeft: `2.5px solid ${borderColor}`,
-        borderRadius: '0 5px 5px 0',
+        borderLeft: `3px solid ${borderColor}`,
+        borderRadius: '0 6px 6px 0',
         boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.7)',
       }}
     >
@@ -728,9 +728,8 @@ export const ProofBlock: React.FC<ProofBlockProps> = ({
             type="button"
             onClick={() => setExpanded(false)}
             style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '3px',
+              display: 'inline',
+              verticalAlign: 'baseline',
               background: 'none',
               border: 'none',
               padding: 0,
@@ -738,12 +737,20 @@ export const ProofBlock: React.FC<ProofBlockProps> = ({
               fontFamily: 'inherit',
               fontSize: '1em',
               fontStyle: 'italic',
+              fontWeight: 500,
               color: 'var(--ads-ink-carbon, #141413)',
               cursor: 'pointer',
             }}
             title="Click to collapse proof"
           >
-            <ChevronDown size={13} style={{ verticalAlign: 'middle' }} />
+            <ChevronDown
+              size={13}
+              style={{
+                display: 'inline',
+                verticalAlign: '-0.12em',
+                marginRight: '3px',
+              }}
+            />
             <span>{title}.</span>
           </button>
           <span>{children}</span>

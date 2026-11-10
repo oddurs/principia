@@ -169,7 +169,7 @@ export const MarketingLandingPage: React.FC<MarketingLandingPageProps> = ({
           borderBottom: '1px solid var(--ads-ink-hairline, #E4E2DC)',
           background:
             'radial-gradient(ellipse 80% 50% at 50% 0%, oklch(0.995 0.004 82) 0%, var(--ads-paper-canvas, #FBF9F6) 100%)',
-          padding: '44px 32px 52px 32px',
+          padding: '56px 36px 64px 36px',
         }}
       >
         <div style={{ maxWidth: '1240px', margin: '0 auto' }}>
@@ -182,10 +182,10 @@ export const MarketingLandingPage: React.FC<MarketingLandingPageProps> = ({
               alignItems: 'center',
               justifyContent: 'space-between',
               gap: '12px',
-              marginBottom: '22px',
+              marginBottom: '28px',
             }}
           >
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
               <Badge tone="compute" dot>
                 PRINCIPIA DESIGN SYSTEM · @principia/core v2.4
               </Badge>
@@ -198,14 +198,14 @@ export const MarketingLandingPage: React.FC<MarketingLandingPageProps> = ({
               type="button"
               onClick={handleCopyCli}
               className="ads-btn-instrument"
-              style={{ height: '26px', padding: '0 10px' }}
+              style={{ height: '28px', padding: '0 12px' }}
               title="Copy install command"
             >
               <Terminal size={11} color="var(--ads-accent-compute)" />
               <code
                 style={{
                   fontFamily: 'var(--ads-font-mono)',
-                  fontSize: '11px',
+                  fontSize: '11.5px',
                   color: 'var(--ads-ink-carbon)',
                 }}
               >
@@ -224,7 +224,7 @@ export const MarketingLandingPage: React.FC<MarketingLandingPageProps> = ({
             style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(460px, 1fr))',
-              gap: '40px',
+              gap: '48px',
               alignItems: 'center',
             }}
           >
@@ -233,10 +233,10 @@ export const MarketingLandingPage: React.FC<MarketingLandingPageProps> = ({
               <h1
                 className="ads-display-title"
                 style={{
-                  fontSize: 'clamp(30px, 3.4vw, 42px)',
-                  lineHeight: 1.14,
+                  fontSize: 'clamp(32px, 3.6vw, var(--ads-hero-size, 40px))',
+                  lineHeight: 1.15,
                   letterSpacing: '-0.022em',
-                  margin: '0 0 16px 0',
+                  margin: '0 0 20px 0',
                 }}
               >
                 Where the editorial monograph meets the precision instrument.
@@ -245,10 +245,9 @@ export const MarketingLandingPage: React.FC<MarketingLandingPageProps> = ({
               <p
                 className="ads-prose"
                 style={{
-                  fontSize: '16.5px',
-                  lineHeight: 1.62,
                   color: 'var(--ads-ink-graphite, #4E4D49)',
-                  margin: '0 0 24px 0',
+                  margin: '0 0 28px 0',
+                  maxWidth: '58ch',
                 }}
               >
                 A light-mode React 19 + TypeScript design system uniting{' '}
@@ -265,8 +264,8 @@ export const MarketingLandingPage: React.FC<MarketingLandingPageProps> = ({
                   display: 'flex',
                   flexWrap: 'wrap',
                   alignItems: 'center',
-                  gap: '10px',
-                  marginBottom: '28px',
+                  gap: '12px',
+                  marginBottom: '32px',
                 }}
               >
                 <button
@@ -514,7 +513,7 @@ export const MarketingLandingPage: React.FC<MarketingLandingPageProps> = ({
           ==================================================================== */}
       <section
         style={{
-          padding: '44px 32px',
+          padding: '56px 36px',
           borderBottom: '1px solid var(--ads-ink-hairline, #E4E2DC)',
           backgroundColor: 'var(--ads-paper-canvas, #FBF9F6)',
         }}
@@ -527,17 +526,24 @@ export const MarketingLandingPage: React.FC<MarketingLandingPageProps> = ({
               alignItems: 'flex-end',
               justifyContent: 'space-between',
               gap: '16px',
-              marginBottom: '22px',
+              marginBottom: '28px',
             }}
           >
             <div>
-              <div className="ads-eyebrow-mono" style={{ color: 'var(--ads-accent-compute)', marginBottom: '4px' }}>
+              <div className="ads-eyebrow-mono" style={{ color: 'var(--ads-accent-compute)', marginBottom: '6px' }}>
                 LIVE REFERENCE WORKBENCHES
               </div>
-              <h2 className="ads-display-title" style={{ fontSize: '24px', margin: '0 0 4px 0' }}>
+              <h2
+                className="ads-display-title"
+                style={{
+                  fontSize: 'var(--ads-h2-size, 23px)',
+                  lineHeight: 1.25,
+                  margin: '0 0 8px 0',
+                }}
+              >
                 Five Reference Application Concepts
               </h2>
-              <p className="ads-prose" style={{ fontSize: '15px', color: 'var(--ads-ink-graphite)', margin: 0 }}>
+              <p className="ads-prose" style={{ color: 'var(--ads-ink-graphite)', margin: 0 }}>
                 Click any application concept below to explore a complete domain workbench built on{' '}
                 <code className="ads-inline-code">@principia/core</code>.
               </p>
@@ -549,7 +555,7 @@ export const MarketingLandingPage: React.FC<MarketingLandingPageProps> = ({
             style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(225px, 1fr))',
-              gap: '14px',
+              gap: '16px',
             }}
           >
             {(
@@ -685,20 +691,27 @@ export const MarketingLandingPage: React.FC<MarketingLandingPageProps> = ({
           ==================================================================== */}
       <section
         style={{
-          padding: '44px 32px',
+          padding: '56px 36px',
           borderBottom: '1px solid var(--ads-ink-hairline, #E4E2DC)',
           backgroundColor: 'var(--ads-paper-desk, #F5F3EE)',
         }}
       >
         <div style={{ maxWidth: '1240px', margin: '0 auto' }}>
-          <div style={{ marginBottom: '22px' }}>
-            <div className="ads-eyebrow-mono" style={{ color: 'var(--ads-accent-reference)', marginBottom: '4px' }}>
+          <div style={{ marginBottom: '28px' }}>
+            <div className="ads-eyebrow-mono" style={{ color: 'var(--ads-accent-reference)', marginBottom: '6px' }}>
               COMPONENT STORYBOOK DIRECTORY
             </div>
-            <h2 className="ads-display-title" style={{ fontSize: '24px', margin: '0 0 4px 0' }}>
+            <h2
+              className="ads-display-title"
+              style={{
+                fontSize: 'var(--ads-h2-size, 23px)',
+                lineHeight: 1.25,
+                margin: '0 0 8px 0',
+              }}
+            >
               All 17 Components Organized into Four Pillars
             </h2>
-            <p className="ads-prose" style={{ fontSize: '15px', color: 'var(--ads-ink-graphite)', margin: 0 }}>
+            <p className="ads-prose" style={{ color: 'var(--ads-ink-graphite)', margin: 0 }}>
               Select any component below to inspect its live interactive scenarios, JSX code, and TypeScript props in Storybook.
             </p>
           </div>
@@ -708,35 +721,35 @@ export const MarketingLandingPage: React.FC<MarketingLandingPageProps> = ({
             style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(480px, 1fr))',
-              gap: '18px',
+              gap: '20px',
             }}
           >
             {COMPONENT_PILLARS.map((pillar) => (
               <div
                 key={pillar.title}
                 style={{
-                  padding: '18px 20px',
-                  borderRadius: '7px',
+                  padding: '24px',
+                  borderRadius: '8px',
                   backgroundColor: 'var(--ads-paper-plate, #FFFFFF)',
                   border: '1px solid var(--ads-ink-hairline, #E4E2DC)',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '12px',
+                  gap: '16px',
                 }}
               >
                 <div>
-                  <span className="ads-badge-domain" style={{ marginBottom: '6px' }}>
+                  <span className="ads-badge-domain" style={{ marginBottom: '8px' }}>
                     {pillar.badge}
                   </span>
-                  <h3 className="ads-section-heading" style={{ fontSize: '17px', margin: '4px 0 4px 0' }}>
+                  <h3 className="ads-section-heading" style={{ margin: '6px 0 6px 0' }}>
                     {pillar.title}
                   </h3>
-                  <p style={{ fontSize: '12.5px', color: 'var(--ads-ink-graphite)', margin: 0 }}>
+                  <p style={{ fontSize: '13.5px', lineHeight: '20px', color: 'var(--ads-ink-graphite)', margin: 0 }}>
                     {pillar.description}
                   </p>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   {pillar.items.map((item) => (
                     <button
                       key={item.id}
@@ -744,9 +757,9 @@ export const MarketingLandingPage: React.FC<MarketingLandingPageProps> = ({
                       onClick={() => onNavigateStory(item.id)}
                       className="ads-nav-item"
                       style={{
-                        height: '34px',
-                        padding: '0 10px',
-                        borderRadius: '5px',
+                        height: '36px',
+                        padding: '0 12px',
+                        borderRadius: '6px',
                         backgroundColor: 'var(--ads-paper-well, #F7F5F0)',
                         border: '1px solid var(--ads-ink-whisper)',
                       }}

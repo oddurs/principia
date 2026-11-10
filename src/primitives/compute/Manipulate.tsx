@@ -191,11 +191,13 @@ export const Scrubber: React.FC<ScrubberProps> = ({
       className="ads-scrubber-token"
       style={{
         position: 'relative',
-        display: 'inline-flex',
-        alignItems: 'baseline',
-        padding: isProseInline ? '0 2.5px' : '2px 6px 3px 6px',
+        display: isProseInline ? 'inline' : 'inline-flex',
+        alignItems: isProseInline ? 'baseline' : 'center',
+        verticalAlign: 'baseline',
+        height: isProseInline ? undefined : '24px',
+        padding: isProseInline ? '0 3px' : '0 8px',
         margin: isProseInline ? '0 0.04em' : '0',
-        borderRadius: isProseInline ? '2.5px' : '4px',
+        borderRadius: isProseInline ? '3px' : '4.5px',
         backgroundColor: isProseInline
           ? dragging || hovered || isActive
             ? slotColor.bg
@@ -220,9 +222,9 @@ export const Scrubber: React.FC<ScrubberProps> = ({
         fontFamily: isProseInline
           ? '"KaTeX_Main", var(--ads-font-prose, serif)'
           : 'var(--ads-font-chrome, "Inter", sans-serif)',
-        fontSize: isProseInline ? '1em' : '11.5px',
+        fontSize: isProseInline ? '1em' : '12px',
         fontVariantNumeric: 'tabular-nums',
-        fontWeight: isProseInline ? 500 : 500,
+        fontWeight: 500,
         lineHeight: 1,
         cursor: 'ew-resize',
         userSelect: 'none',

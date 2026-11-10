@@ -265,11 +265,11 @@ export const Pod: React.FC<PodProps> = ({
           flexWrap: 'wrap',
           alignItems: 'center',
           justifyContent: 'space-between',
-          minHeight: '42px',
-          gap: '10px',
+          minHeight: '48px',
+          gap: '12px',
           padding: isSeamless
-            ? '6px 0 10px 0'
-            : '9px var(--ads-pod-padding-x, 24px)',
+            ? '8px 0 12px 0'
+            : '12px var(--ads-pod-padding-x, 28px)',
           background: isSeamless
             ? 'transparent'
             : 'linear-gradient(180deg, oklch(0.996 0.002 85) 0%, oklch(0.988 0.003 83) 100%)',
@@ -283,55 +283,66 @@ export const Pod: React.FC<PodProps> = ({
         <div
           style={{
             display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
+            flexDirection: 'column',
+            gap: '2px',
             minWidth: 0,
-            flexWrap: 'wrap',
           }}
         >
-          {sectionNum && (
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                height: '18px',
-                padding: '0 5.5px',
-                borderRadius: '3.5px',
-                border: '1px solid oklch(0.90 0.015 32)',
-                backgroundColor: 'oklch(0.985 0.008 32)',
-                fontFamily: 'var(--ads-font-display)',
-                fontStyle: 'italic',
-                fontSize: '12px',
-                fontWeight: 600,
-                color: 'var(--ads-accent-compute, #D63E18)',
-                userSelect: 'none',
-              }}
-            >
-              § {sectionNum}
-            </span>
-          )}
-
-          <h3
-            className="ads-section-heading"
+          <div
             style={{
-              margin: 0,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              minWidth: 0,
+              flexWrap: 'wrap',
             }}
           >
-            {cleanTitle}
-          </h3>
+            {sectionNum && (
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  height: '20px',
+                  padding: '0 6px',
+                  borderRadius: '4px',
+                  border: '1px solid oklch(0.90 0.015 32)',
+                  backgroundColor: 'oklch(0.985 0.008 32)',
+                  fontFamily: 'var(--ads-font-display)',
+                  fontStyle: 'italic',
+                  fontSize: '12.5px',
+                  lineHeight: 1,
+                  fontWeight: 600,
+                  color: 'var(--ads-accent-compute, #D63E18)',
+                  userSelect: 'none',
+                }}
+              >
+                § {sectionNum}
+              </span>
+            )}
+
+            <h3
+              className="ads-section-heading"
+              style={{
+                margin: 0,
+              }}
+            >
+              {cleanTitle}
+            </h3>
+          </div>
 
           {subtitle && (
-            <span
+            <div
               className="ads-ui"
               style={{
                 color: 'var(--ads-ink-pencil, #82807A)',
-                fontSize: '12px',
+                fontSize: '12.5px',
+                lineHeight: '18px',
                 fontWeight: 400,
               }}
             >
-              · {subtitle}
-            </span>
+              {subtitle}
+            </div>
           )}
         </div>
 

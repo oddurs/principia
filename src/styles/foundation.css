@@ -58,20 +58,22 @@
   --ads-accent-assumption: oklch(0.580 0.145 75);
   --ads-accent-contradiction: oklch(0.510 0.190 22);
 
-  /* Default Workbench Density & Vertical Rhythm Contract */
-  --ads-title-size: 28px;
-  --ads-heading-size: 18px;
-  --ads-prose-size: 16px;
-  --ads-prose-lh: 1.62;
-  --ads-secondary-prose-size: 14px;
-  --ads-baseline-step: 26px;
-  --ads-chrome-size: 12.5px;
+  /* Default Workbench Density & 4px-Aligned Vertical Rhythm Contract */
+  --ads-hero-size: 40px;
+  --ads-title-size: 30px;
+  --ads-h2-size: 23px;
+  --ads-heading-size: 18.5px;
+  --ads-prose-size: 16.5px;
+  --ads-prose-lh: 28px;
+  --ads-secondary-prose-size: 14.5px;
+  --ads-baseline-step: 28px;
+  --ads-chrome-size: 13px;
   --ads-mono-size: 12.5px;
-  --ads-pod-padding-y: 20px;
-  --ads-pod-padding-x: 24px;
-  --ads-pod-gap: 18px;
+  --ads-pod-padding-y: 24px;
+  --ads-pod-padding-x: 28px;
+  --ads-pod-gap: 24px;
   --ads-pod-radius: 8px;
-  --ads-block-margin-y: 16px;
+  --ads-block-margin-y: 20px;
 
   /* Booktabs & TeX Rule Geometry */
   --ads-rule-heavy: 0.08em;
@@ -79,50 +81,56 @@
   --ads-rule-cmid: 0.035em;
 }
 
-/* Orthogonal Axis 1: Density Scales */
+/* Orthogonal Axis 1: Density Scales (Locked to 4px / 1rlh Vertical Rhythm) */
 [data-density='manuscript'] {
-  --ads-title-size: 34px;
-  --ads-heading-size: 20px;
-  --ads-prose-size: 17.5px;
-  --ads-prose-lh: 1.68;
-  --ads-secondary-prose-size: 15px;
-  --ads-baseline-step: 29px;
-  --ads-chrome-size: 13px;
+  --ads-hero-size: 46px;
+  --ads-title-size: 36px;
+  --ads-h2-size: 26px;
+  --ads-heading-size: 21px;
+  --ads-prose-size: 18px;
+  --ads-prose-lh: 32px;
+  --ads-secondary-prose-size: 15.5px;
+  --ads-baseline-step: 32px;
+  --ads-chrome-size: 13.5px;
   --ads-mono-size: 13px;
-  --ads-pod-padding-y: 24px;
-  --ads-pod-padding-x: 28px;
-  --ads-pod-gap: 22px;
-  --ads-block-margin-y: 20px;
+  --ads-pod-padding-y: 28px;
+  --ads-pod-padding-x: 32px;
+  --ads-pod-gap: 28px;
+  --ads-block-margin-y: 24px;
 }
 
 [data-density='workbench'] {
-  --ads-title-size: 28px;
-  --ads-heading-size: 18px;
-  --ads-prose-size: 16px;
-  --ads-prose-lh: 1.62;
-  --ads-secondary-prose-size: 14px;
-  --ads-baseline-step: 26px;
-  --ads-chrome-size: 12.5px;
+  --ads-hero-size: 40px;
+  --ads-title-size: 30px;
+  --ads-h2-size: 23px;
+  --ads-heading-size: 18.5px;
+  --ads-prose-size: 16.5px;
+  --ads-prose-lh: 28px;
+  --ads-secondary-prose-size: 14.5px;
+  --ads-baseline-step: 28px;
+  --ads-chrome-size: 13px;
   --ads-mono-size: 12.5px;
-  --ads-pod-padding-y: 20px;
-  --ads-pod-padding-x: 24px;
-  --ads-pod-gap: 18px;
-  --ads-block-margin-y: 16px;
+  --ads-pod-padding-y: 24px;
+  --ads-pod-padding-x: 28px;
+  --ads-pod-gap: 24px;
+  --ads-block-margin-y: 20px;
 }
 
 [data-density='compact'] {
+  --ads-hero-size: 32px;
   --ads-title-size: 24px;
+  --ads-h2-size: 19px;
   --ads-heading-size: 16px;
-  --ads-prose-size: 14.5px;
-  --ads-prose-lh: 1.56;
-  --ads-secondary-prose-size: 13px;
-  --ads-baseline-step: 23px;
+  --ads-prose-size: 15px;
+  --ads-prose-lh: 24px;
+  --ads-secondary-prose-size: 13.5px;
+  --ads-baseline-step: 24px;
   --ads-chrome-size: 12px;
   --ads-mono-size: 12px;
-  --ads-pod-padding-y: 14px;
-  --ads-pod-padding-x: 18px;
-  --ads-pod-gap: 14px;
-  --ads-block-margin-y: 12px;
+  --ads-pod-padding-y: 16px;
+  --ads-pod-padding-x: 20px;
+  --ads-pod-gap: 16px;
+  --ads-block-margin-y: 16px;
 }
 
 /* Orthogonal Axis 2: Materiality Palettes */
@@ -188,10 +196,10 @@ textarea {
   font-family: var(--ads-font-display);
   font-optical-sizing: auto;
   font-variation-settings: 'opsz' 48;
-  font-size: var(--ads-title-size, 26px);
+  font-size: var(--ads-title-size, 30px);
   font-weight: 500;
-  line-height: 1.15;
-  letter-spacing: -0.022em;
+  line-height: 1.2;
+  letter-spacing: -0.023em;
   color: var(--ads-ink-carbon, #141413);
   font-feature-settings: 'kern' 1, 'liga' 1, 'dlig' 1, 'lnum' 1;
 }
@@ -200,10 +208,10 @@ textarea {
   font-family: var(--ads-font-display);
   font-optical-sizing: auto;
   font-variation-settings: 'opsz' 24;
-  font-size: var(--ads-heading-size, 16px);
+  font-size: var(--ads-heading-size, 18.5px);
   font-weight: 600;
-  line-height: 1.25;
-  letter-spacing: -0.014em;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
   color: var(--ads-ink-carbon, #141413);
   font-feature-settings: 'kern' 1, 'liga' 1, 'lnum' 1;
 }
@@ -212,20 +220,20 @@ textarea {
   font-family: var(--ads-font-prose);
   font-optical-sizing: auto;
   font-variation-settings: 'opsz' 16;
-  font-size: var(--ads-prose-size, 15.5px);
-  line-height: var(--ads-prose-lh, 1.60);
+  font-size: var(--ads-prose-size, 16.5px);
+  line-height: var(--ads-prose-lh, 28px);
   letter-spacing: -0.003em;
   color: var(--ads-ink-carbon, #141413);
   font-kerning: normal;
   font-variant-ligatures: common-ligatures contextual;
   font-variant-numeric: lining-nums;
-   font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1, 'lnum' 1;
+  font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1, 'lnum' 1;
   hyphens: auto;
   -webkit-hyphens: auto;
 }
 
 .ads-prose p {
-  margin: 0 0 0.75em 0;
+  margin: 0 0 calc(var(--ads-baseline-step, 28px) * 0.65) 0;
 }
 
 .ads-prose p:last-child {
@@ -235,14 +243,15 @@ textarea {
 .ads-smallcaps {
   font-variant-caps: small-caps;
   font-feature-settings: 'smcp' 1, 'lnum' 1;
-  letter-spacing: 0.045em;
+  letter-spacing: 0.048em;
 }
 
 .ads-eyebrow-mono {
   font-family: var(--ads-font-chrome);
   font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.04em;
+  font-weight: 600;
+  line-height: 16px;
+  letter-spacing: 0.055em;
   text-transform: uppercase;
   font-variant-numeric: tabular-nums;
   color: var(--ads-ink-pencil, #82807A);
@@ -264,14 +273,15 @@ textarea {
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  height: 30px;
-  padding: 0 10px;
-  border-radius: 5.5px;
+  height: 32px;
+  padding: 0 11px;
+  border-radius: 6px;
   border: 1px solid transparent;
   background-color: transparent;
   color: var(--ads-ink-graphite, #4E4D49);
   font-family: var(--ads-font-chrome);
-  font-size: 12.5px;
+  font-size: 13px;
+  line-height: 20px;
   font-weight: 400;
   letter-spacing: -0.011em;
   text-align: left;
@@ -296,11 +306,11 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 28px;
-  gap: 10px;
+  min-height: 30px;
+  gap: 12px;
   font-family: var(--ads-font-chrome);
   font-variant-numeric: tabular-nums;
-  font-size: 12.5px;
+  font-size: 13px;
   line-height: 20px;
   letter-spacing: -0.01em;
   color: var(--ads-ink-graphite, #4E4D49);
@@ -310,9 +320,9 @@ textarea {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 19px;
-  min-width: 19px;
-  padding: 0 5px;
+  height: 20px;
+  min-width: 20px;
+  padding: 0 5.5px;
   border-radius: 4px;
   border: 1px solid oklch(0.885 0.006 82);
   background: linear-gradient(180deg, #ffffff 0%, oklch(0.975 0.004 82) 100%);
@@ -332,8 +342,9 @@ textarea {
   font-family: var(--ads-font-chrome);
   font-size: 11.5px;
   font-weight: 600;
-  line-height: 18px;
-  letter-spacing: 0.01em;
+  line-height: 20px;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
   color: var(--ads-ink-pencil, #82807A);
   user-select: none;
 }
@@ -343,10 +354,10 @@ textarea {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  height: 26px;
-  padding: 0 9px;
-  border-radius: 5px;
+  gap: 5.5px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 5.5px;
   border: 1px solid oklch(0.865 0.007 82);
   border-bottom-color: oklch(0.805 0.009 82);
   background: linear-gradient(180deg, #ffffff 0%, oklch(0.976 0.004 82) 100%);
@@ -355,7 +366,8 @@ textarea {
     0 1px 1.5px rgba(20, 20, 19, 0.04);
   color: var(--ads-ink-graphite, #4E4D49);
   font-family: var(--ads-font-chrome);
-  font-size: 11.5px;
+  font-size: 12px;
+  line-height: 1;
   font-weight: 500;
   letter-spacing: -0.01em;
   cursor: pointer;
@@ -406,9 +418,9 @@ textarea {
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  min-height: 28px;
-  padding: 2px;
-  border-radius: 6px;
+  min-height: 30px;
+  padding: 3px;
+  border-radius: 6.5px;
   background-color: oklch(0.952 0.005 82);
   border: 1px solid oklch(0.912 0.005 82);
   box-shadow: inset 0 1px 1.5px rgba(20, 20, 19, 0.035);
@@ -419,14 +431,15 @@ textarea {
   align-items: center;
   justify-content: center;
   gap: 5px;
-  min-height: 22px;
-  padding: 0 9px;
+  min-height: 24px;
+  padding: 0 10px;
   border-radius: 4.5px;
   border: none;
   background-color: transparent;
   color: var(--ads-ink-pencil, #82807A);
   font-family: var(--ads-font-chrome);
-  font-size: 11.5px;
+  font-size: 12px;
+  line-height: 1;
   font-weight: 400;
   letter-spacing: -0.01em;
   cursor: pointer;
@@ -454,9 +467,9 @@ textarea {
 .ads-badge-domain {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 5.5px;
   height: 22px;
-  padding: 0 7.5px;
+  padding: 0 8px;
   border-radius: 4.5px;
   border: 1px solid oklch(0.905 0.005 82);
   background: linear-gradient(180deg, #ffffff 0%, oklch(0.978 0.004 82) 100%);
@@ -464,8 +477,9 @@ textarea {
   font-family: var(--ads-font-chrome);
   font-variant-numeric: tabular-nums;
   font-size: 10.5px;
-  font-weight: 500;
-  letter-spacing: 0.03em;
+  line-height: 1;
+  font-weight: 600;
+  letter-spacing: 0.035em;
   color: var(--ads-ink-graphite, #4E4D49);
   user-select: none;
 }
@@ -515,28 +529,30 @@ textarea {
 
 .ads-inline-code {
   font-family: var(--ads-font-mono);
-  font-size: 0.81em;
+  font-size: 0.82em;
+  line-height: 1;
   font-feature-settings: 'zero' 1, 'ss01' 1, 'calt' 1;
   background-color: oklch(0.960 0.005 82);
   border: 1px solid oklch(0.925 0.005 82);
-  padding: 0.04em 0.32em;
+  padding: 0.1em 0.36em;
   margin: 0 0.06em;
-  border-radius: 3px;
+  border-radius: 3.5px;
   color: oklch(0.22 0.01 80);
   vertical-align: baseline;
 }
 
-/* TeX \mathsurround & baseline strut guard */
+/* TeX \mathsurround & flush baseline integration */
 .ads-math-inline {
-  display: inline-block;
-  line-height: 0;
+  display: inline;
+  line-height: 1;
   vertical-align: baseline;
-  margin: 0 0.05em;
+  margin: 0 0.04em;
 }
 
 .ads-math-inline .katex {
-  font-size: 1.01em;
+  font-size: 1.02em;
   line-height: 1;
+  vertical-align: baseline;
 }
 
 /* Display math (\begin{equation}) */
@@ -544,12 +560,12 @@ textarea {
   margin: 0;
   overflow-x: auto;
   overflow-y: hidden;
-  padding: 0.2em 0;
+  padding: 0.25em 0;
   scrollbar-width: thin;
 }
 
 .ads-math-display .katex-display > .katex {
-  font-size: 1.02em;
+  font-size: 1.05em;
 }
 
 .ads-code-block {
@@ -674,30 +690,34 @@ textarea {
 
 /* Button Sizes (4px Harmonic Sub-Grid) */
 .ads-btn[data-size='xs'] {
-  height: 25px;
-  padding: 0 9px;
-  font-size: 11.5px;
-  border-radius: 4.5px;
+  height: 26px;
+  padding: 0 10px;
+  font-size: 12px;
+  line-height: 1;
+  border-radius: 5px;
 }
 
 .ads-btn[data-size='sm'] {
-  height: 30px;
-  padding: 0 12px;
+  height: 32px;
+  padding: 0 13px;
   font-size: 12.5px;
+  line-height: 1;
   border-radius: 5.5px;
 }
 
 .ads-btn[data-size='md'] {
-  height: 36px;
+  height: 38px;
   padding: 0 16px;
-  font-size: 13px;
+  font-size: 13.5px;
+  line-height: 1;
   border-radius: 6px;
 }
 
 .ads-btn[data-size='lg'] {
-  height: 42px;
-  padding: 0 20px;
-  font-size: 14px;
+  height: 44px;
+  padding: 0 22px;
+  font-size: 14.5px;
+  line-height: 1;
   border-radius: 7px;
 }
 
@@ -1066,8 +1086,8 @@ textarea {
 /* Dual-Register Cell Classes */
 .ads-cell-text {
   font-family: var(--ads-font-prose);
-  font-size: 13.5px;
-  line-height: 1.4;
+  font-size: 14px;
+  line-height: 20px;
   color: var(--ads-ink-carbon, #141413);
   text-align: left;
 }
@@ -1076,7 +1096,8 @@ textarea {
   font-family: var(--ads-font-chrome);
   font-feature-settings: 'cv01' 1, 'cv02' 1, 'cv03' 1, 'cv04' 1, 'ss01' 1;
   font-variant-numeric: tabular-nums;
-  font-size: 12px;
+  font-size: 12.5px;
+  line-height: 20px;
   letter-spacing: -0.01em;
   color: var(--ads-ink-carbon, #141413);
   text-align: right;
