@@ -22,7 +22,5 @@ export * from './primitives/agentic/AgenticWorkflow';
 
 // L4 Flagship Application Archetypes & Unified Platform Shell
 export * from './prototypes/DomainPrototypes';
-export * from './app/PrincipiaApp';
-export * from './codex/CodexApp';
 export * from './platform/PlatformShell';
 export * from './platform/navigation';

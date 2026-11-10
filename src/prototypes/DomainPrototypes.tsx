@@ -9,12 +9,23 @@ import {
 } from '../primitives/agentic/AgenticWorkflow';
 import { Scrubber } from '../primitives/compute/Manipulate';
 import {
+  Sym,
   InlineMath,
   EquationBlock,
   FormalBlock,
+  ProofBlock,
 } from '../primitives/manuscript/MathAndFormal';
-import { CartesianCanvas } from '../primitives/datavis/ScienceAndVis';
-import { CodeCell } from '../primitives/compute/CodeAndCopilot';
+import { Cite, CrossRef } from '../primitives/manuscript/CitationsAndRefs';
+import {
+  CartesianCanvas,
+  ScientificPlot,
+  BooktabsTable,
+} from '../primitives/datavis/ScienceAndVis';
+import {
+  OmniComputeBar,
+  CodeCell,
+  GroundedAIChat,
+} from '../primitives/compute/CodeAndCopilot';
 import {
   Button,
   SegmentedControl,
@@ -2081,6 +2092,260 @@ export const NexusAgentWorkflowPrototype: React.FC = () => {
             data={AGENT_RUN_LEDGER}
           />
         </Card>
+      </div>
+    </div>
+  );
+};
+
+/* ========================================================================== */
+/* PROTOTYPE 5: PRINCIPIA — DYNAMICAL SYSTEMS, SYMBOLIC CAS & MONOGRAPH LAB   */
+/* ========================================================================== */
+
+export const PrincipiaPhysicsPrototype: React.FC = () => {
+  const [model, setModel] = useState<'damped-oscillator' | 'quantum-eigenstates' | 'lotka-volterra'>(
+    'damped-oscillator'
+  );
+  const [zeta, setZeta] = useState<number>(0.25);
+  const [omega0, setOmega0] = useState<number>(4.0);
+  const [quantumN] = useState<number>(2);
+
+  const dampedFreq = useMemo(() => {
+    const disc = 1 - zeta * zeta;
+    return disc > 0 ? omega0 * Math.sqrt(disc) : 0;
+  }, [zeta, omega0]);
+
+  const regimeLabel =
+    zeta < 0.99 ? 'Underdamped (ζ < 1)' : zeta <= 1.01 ? 'Critical (ζ = 1)' : 'Overdamped (ζ > 1)';
+
+  return (
+    <div style={{ backgroundColor: 'var(--ads-paper-desk, #F2F0EA)', minHeight: 'calc(100vh - 94px)' }}>
+      {/* Top Physics & CAS Control Bar */}
+      <div
+        className="ads-ui"
+        style={{
+          padding: '12px 28px',
+          backgroundColor: 'var(--ads-paper-plate, #FFFFFF)',
+          borderBottom: '1px solid var(--ads-ink-hairline, #E3E1DB)',
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '14px',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          <Badge tone="reference" dot>
+            PRINCIPIA DYNAMICAL &amp; CAS LAB
+          </Badge>
+          <span style={{ fontWeight: 700, fontSize: '15px', color: 'var(--ads-ink-carbon)' }}>
+            Coupled Symbolic Mathematics, Symplectic Phase Space &amp; Formal Proofs
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+          <SegmentedControl
+            size="sm"
+            value={model}
+            onChange={setModel}
+            options={[
+              { id: 'damped-oscillator', label: 'Damped Oscillator' },
+              { id: 'quantum-eigenstates', label: 'Quantum Well ψₙ(x)' },
+              { id: 'lotka-volterra', label: 'Lotka–Volterra Orbits' },
+            ]}
+          />
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
+            <span style={{ color: 'var(--ads-ink-graphite)', fontWeight: 500 }}>Damping ζ:</span>
+            <Scrubber
+              symbolId="zeta"
+              symbolLatex="\zeta"
+              value={zeta}
+              min={0.05}
+              max={1.6}
+              step={0.01}
+              onChange={setZeta}
+            />
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
+            <span style={{ color: 'var(--ads-ink-graphite)', fontWeight: 500 }}>Frequency ω₀:</span>
+            <Scrubber
+              symbolId="omega0"
+              symbolLatex="\omega_0"
+              value={omega0}
+              min={1.0}
+              max={8.0}
+              step={0.1}
+              unit="rad/s"
+              onChange={setOmega0}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Container */}
+      <div
+        style={{
+          maxWidth: '1320px',
+          margin: '0 auto',
+          padding: '28px 32px 64px 32px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '24px',
+        }}
+      >
+        {/* Symbolic OmniComputeBar */}
+        <OmniComputeBar
+          onSelectPreset={(preset) => {
+            setZeta(preset.zeta);
+            setOmega0(preset.omega0);
+          }}
+        />
+
+        {/* 4 Coupled Physical Telemetry Readouts */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
+            gap: '16px',
+          }}
+        >
+          <MetricCard
+            label="Spectral Regime"
+            value={regimeLabel}
+            delta={`ζ = ${zeta.toFixed(2)}`}
+            deltaTrend={zeta < 1 ? 'up' : 'neutral'}
+            footnote="Critical bifurcation boundary at ζ = 1.00"
+          />
+          <MetricCard
+            label="Characteristic Roots s₁,₂"
+            value={`−${(zeta * omega0).toFixed(2)}`}
+            unit={zeta < 1 ? `± i·${dampedFreq.toFixed(2)}` : 'rad/s'}
+            delta="Hurwitz Stable"
+            deltaTrend="up"
+            footnote="Poles reside strictly in the open left half-plane"
+          />
+          <MetricCard
+            label="Symplectic Area Contraction"
+            value={`−${(2 * zeta * omega0).toFixed(2)}`}
+            unit="s⁻¹"
+            delta="Liouville Rate"
+            deltaTrend="neutral"
+            sparklineData={[1.0, 0.72, 0.51, 0.36, 0.25, 0.18, 0.12]}
+            footnote="d/dt Vol(Ω) = −2ζω₀ Vol(Ω)"
+          />
+          <MetricCard
+            label="Quality Factor Q"
+            value={(1 / (2 * Math.max(0.05, zeta))).toFixed(2)}
+            unit="dimensionless"
+            delta={`ω₀ = ${omega0.toFixed(1)} rad/s`}
+            deltaTrend="up"
+            footnote="Energy stored per radian vs. thermal dissipation"
+          />
+        </div>
+
+        {/* Split Row: Multi-Panel Scientific Plot + Formal Manuscript & Theorem */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(480px, 1fr))',
+            gap: '22px',
+            alignItems: 'start',
+          }}
+        >
+          <Pod
+            title="1. Multi-Panel Trajectory, Phase Portrait & Complex Root Locus"
+            subtitle="Coupled in real time to damping ratio ζ and natural frequency ω₀"
+            domainTag="EXACT"
+          >
+            <ScientificPlot
+              model={model}
+              zeta={zeta}
+              omega0={omega0}
+              quantumN={quantumN}
+            />
+          </Pod>
+
+          <Pod
+            title="2. Formal Monograph & Green’s Propagator Derivation"
+            subtitle="Hover any mathematical symbol to trigger cross-representation highlighting"
+            domainTag="THEOREM"
+            latexSource="G(t-\tau) = \frac{e^{-\zeta\omega_0(t-\tau)}}{\omega_0\sqrt{1-\zeta^2}}\sin\!\left(\omega_0\sqrt{1-\zeta^2}(t-\tau)\right)"
+          >
+            <p className="ads-prose" style={{ margin: '0 0 12px 0' }}>
+              Consider the canonical dissipative harmonic flow governed by damping ratio{' '}
+              <Sym id="zeta" math="\zeta" /> and natural eigenfrequency{' '}
+              <Sym id="omega0" math="\omega_0" />. Following Arnold <Cite id="arnold1989" /> and
+              Duhamel’s principle <CrossRef to="eq:greens" />, the impulse response kernel{' '}
+              <Sym id="kernel" math="G(t-\tau)" /> takes the closed form:
+            </p>
+
+            <EquationBlock
+              id="eq:greens"
+              number="1.1"
+              latex="G(t-\tau) = \frac{e^{-\zeta\omega_0(t-\tau)}}{\omega_0\sqrt{1-\zeta^2}}\sin\!\left(\omega_0\sqrt{1-\zeta^2}(t-\tau)\right)\Theta(t-\tau)"
+              referencedSymbols={['zeta', 'omega0', 'kernel']}
+            />
+
+            <FormalBlock
+              id="thm:lyapunov"
+              variant="theorem"
+              number="1.1"
+              title="Lyapunov Spectral Contraction"
+            >
+              For every trajectory with <Sym id="zeta" math="\zeta > 0" /> and{' '}
+              <Sym id="omega0" math="\omega_0 > 0" />, the canonical Hamiltonian energy{' '}
+              <Sym id="energy" math="\mathcal{H}(q,p)" /> is a strict Lyapunov function satisfying{' '}
+              <InlineMath
+                latex={`\\dot{\\mathcal{H}}(q,p) = -2\\zeta\\omega_0 p^2 = -${(
+                  2 *
+                  zeta *
+                  omega0
+                ).toFixed(2)}\\,p^2 \\le 0`}
+              />.
+            </FormalBlock>
+
+            <ProofBlock title="Proof of Theorem 1.1 (Halmos Q.E.D.)">
+              Differentiating <InlineMath latex="\mathcal{H}(q,p) = \frac{1}{2}p^2 + \frac{1}{2}\omega_0^2 q^2" />{' '}
+              along the vector field <InlineMath latex="(\dot{q}, \dot{p}) = (p, -\omega_0^2 q - 2\zeta\omega_0 p)" />{' '}
+              cancels the conservative cross-terms <InlineMath latex="\omega_0^2 q p" />, leaving{' '}
+              <InlineMath latex="\dot{\mathcal{H}} = -2\zeta\omega_0 p^2 \le 0" />. By LaSalle’s
+              Invariance Principle, the origin is globally asymptotically stable.
+            </ProofBlock>
+          </Pod>
+        </div>
+
+        {/* Bottom Split: Booktabs Spectral Ledger + Multi-Dialect Code Cell & AI Copilot */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(480px, 1fr))',
+            gap: '22px',
+            alignItems: 'start',
+          }}
+        >
+          <Pod
+            title="3. Spectral Classification Ledger (booktabs.sty)"
+            subtitle="Click any regime row to synchronize damping ratio ζ across all plots and equations"
+            domainTag="EMPIRICAL"
+          >
+            <BooktabsTable
+              caption="Table 1: Eigenvalues, Q-factors, and relaxation times across canonical damping regimes."
+              activeZeta={zeta}
+              omega0={omega0}
+              onSelectZeta={setZeta}
+            />
+          </Pod>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <CodeCell
+              language="Julia 1.11 · DifferentialEquations.jl"
+              zeta={zeta}
+              omega0={omega0}
+            />
+            <GroundedAIChat />
+          </div>
+        </div>
       </div>
     </div>
   );

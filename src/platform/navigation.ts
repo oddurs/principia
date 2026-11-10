@@ -39,14 +39,11 @@ export type StoryComponentId =
   | 'agentic-workflow';
 
 export type PrototypeAppId =
+  | 'agent-workflow'
   | 'ai-evals'
   | 'quant-macro'
   | 'biomed-trials'
-  | 'agent-workflow'
-  | 'principia'
-  | 'wolfram'
-  | 'monograph'
-  | 'notebook';
+  | 'principia';
 
 export interface PlatformRoute {
   section: PlatformSection;
@@ -59,7 +56,7 @@ export const DEFAULT_ROUTE: PlatformRoute = {
   section: 'overview',
   docPage: 'getting-started',
   storyId: 'buttons-badges',
-  prototypeId: 'ai-evals',
+  prototypeId: 'agent-workflow',
 };
 
 export function parseHashRoute(
@@ -118,15 +115,15 @@ export function parseHashRoute(
   }
 
   if (seg0 === 'prototypes') {
+    if (seg1 === 'wolfram' || seg1 === 'monograph' || seg1 === 'notebook') {
+      return { ...prev, section: 'prototypes', prototypeId: 'principia' };
+    }
     const validProtos: PrototypeAppId[] = [
+      'agent-workflow',
       'ai-evals',
       'quant-macro',
       'biomed-trials',
-      'agent-workflow',
       'principia',
-      'wolfram',
-      'monograph',
-      'notebook',
     ];
     const prototypeId = validProtos.includes(seg1 as PrototypeAppId)
       ? (seg1 as PrototypeAppId)

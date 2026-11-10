@@ -4,12 +4,10 @@ import {
   Monitor,
   Tablet,
   Smartphone,
-  AlignJustify,
   Grid,
   Hand,
   Copy,
   Check,
-  Sliders,
   Code2,
   Search,
   RotateCcw,
@@ -19,8 +17,6 @@ import {
 } from 'lucide-react';
 import {
   useAcademicSystem,
-  SYMBOL_SLOT_COLORS,
-  ChromingMode,
   DeviceSimulation,
   DensityMode,
 } from '../core/registry';
@@ -658,23 +654,15 @@ export const StorybookPage: React.FC<StorybookPageProps> = ({
   onSelectStory,
 }) => {
   const {
-    symbols,
-    activeSymbolId,
-    hoverSymbol,
-    togglePinSymbol,
     citations,
     pinnedCitations,
     togglePinCitation,
-    chroming,
-    setChroming,
     density,
     setDensity,
     deviceSim,
     setDeviceSim,
     simulateTouch,
     setSimulateTouch,
-    xrayBaseline,
-    setXrayBaseline,
     xrayGrid,
     setXrayGrid,
   } = useAcademicSystem();
@@ -773,7 +761,7 @@ export const StorybookPage: React.FC<StorybookPageProps> = ({
     <div
       style={{
         display: 'grid',
-        gridTemplateColumns: '252px minmax(0, 1fr) 280px',
+        gridTemplateColumns: '256px minmax(0, 1fr)',
         alignItems: 'start',
         minHeight: 'calc(100vh - 52px)',
       }}
@@ -975,7 +963,44 @@ export const StorybookPage: React.FC<StorybookPageProps> = ({
             </strong>
           </div>
 
-          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '6px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px' }}>
+            {/* Live Coupled Parameters for Scientific Stories */}
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ color: 'var(--ads-ink-pencil)', fontSize: '11px' }}>ζ:</span>
+              <Scrubber
+                symbolId="zeta"
+                value={zeta}
+                min={0.05}
+                max={1.8}
+                step={0.01}
+                onChange={setZeta}
+              />
+            </div>
+
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ color: 'var(--ads-ink-pencil)', fontSize: '11px' }}>ω₀:</span>
+              <Scrubber
+                symbolId="omega0"
+                value={omega0}
+                min={1.0}
+                max={8.0}
+                step={0.1}
+                unit="rad/s"
+                onChange={setOmega0}
+              />
+            </div>
+
+            <select
+              value={density}
+              onChange={(e) => setDensity(e.target.value as DensityMode)}
+              className="ads-btn-instrument"
+              title="Typography & Spacing Density Scale"
+            >
+              <option value="workbench">Density: Workbench</option>
+              <option value="manuscript">Density: Manuscript</option>
+              <option value="compact">Density: Compact</option>
+            </select>
+
             {/* Container Width Simulator */}
             <div className="ads-pill-group">
               {(
@@ -1010,16 +1035,6 @@ export const StorybookPage: React.FC<StorybookPageProps> = ({
 
             <button
               type="button"
-              data-active={xrayBaseline ? 'true' : 'false'}
-              className="ads-btn-instrument"
-              onClick={() => setXrayBaseline(!xrayBaseline)}
-            >
-              <AlignJustify size={11} />
-              <span>1rlh</span>
-            </button>
-
-            <button
-              type="button"
               data-active={xrayGrid ? 'true' : 'false'}
               className="ads-btn-instrument"
               onClick={() => setXrayGrid(!xrayGrid)}
@@ -1034,10 +1049,13 @@ export const StorybookPage: React.FC<StorybookPageProps> = ({
         <div
           className="ads-xray-stage"
           style={{
-            padding: '22px 28px 56px 28px',
+            maxWidth: '1160px',
+            width: '100%',
+            margin: '0 auto',
+            padding: '26px 32px 64px 32px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '20px',
+            gap: '22px',
           }}
         >
           {/* Story Title, Export Pills & Import Copy Bar */}
@@ -2736,180 +2754,6 @@ export const StorybookPage: React.FC<StorybookPageProps> = ({
           </div>
         </div>
       </main>
-
-      {/* ====================================================================
-          RIGHT RAIL: STORYBOOK KNOBS & LIVE SYMBOL BUS
-          ==================================================================== */}
-      <aside
-        aria-label="Storybook Controls & Knobs"
-        className="ads-ui"
-        style={{
-          position: 'sticky',
-          top: '44px',
-          padding: '14px 12px',
-          borderLeft: '1px solid var(--ads-ink-hairline, #E4E2DC)',
-          fontSize: '11.5px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '14px',
-        }}
-      >
-        {/* Interactive Story Knobs */}
-        <div
-          style={{
-            padding: '12px',
-            borderRadius: '6px',
-            backgroundColor: 'var(--ads-paper-plate, #FFFFFF)',
-            border: '1px solid var(--ads-ink-hairline)',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              fontWeight: 600,
-              marginBottom: '10px',
-            }}
-          >
-            <Sliders size={12} color="var(--ads-accent-compute)" />
-            <span>Interactive Parameters</span>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div className="ads-prop-row">
-              <span>Damping ζ</span>
-              <Scrubber
-                symbolId="zeta"
-                value={zeta}
-                min={0.05}
-                max={1.8}
-                step={0.01}
-                onChange={setZeta}
-              />
-            </div>
-
-            <div className="ads-prop-row">
-              <span>Eigenfreq ω₀</span>
-              <Scrubber
-                symbolId="omega0"
-                value={omega0}
-                min={1.0}
-                max={8.0}
-                step={0.1}
-                unit="rad/s"
-                onChange={setOmega0}
-              />
-            </div>
-
-            <div className="ads-prop-row">
-              <span>Chroming</span>
-              <select
-                value={chroming}
-                onChange={(e) => setChroming(e.target.value as ChromingMode)}
-                className="ads-btn-instrument"
-              >
-                <option value="framed">framed</option>
-                <option value="seamless">seamless</option>
-                <option value="bracketed">bracketed</option>
-              </select>
-            </div>
-
-            <div className="ads-prop-row">
-              <span>Density</span>
-              <select
-                value={density}
-                onChange={(e) => setDensity(e.target.value as DensityMode)}
-                className="ads-btn-instrument"
-              >
-                <option value="manuscript">manuscript</option>
-                <option value="workbench">workbench</option>
-                <option value="compact">compact</option>
-              </select>
-            </div>
-
-            {activeStory === 'pod' && (
-              <div className="ads-prop-row">
-                <span>Domain Tag</span>
-                <select
-                  value={podDomainTag}
-                  onChange={(e) =>
-                    setPodDomainTag(
-                      e.target.value as typeof podDomainTag
-                    )
-                  }
-                  className="ads-btn-instrument"
-                >
-                  <option value="EXACT">EXACT</option>
-                  <option value="SYMBOLIC">SYMBOLIC</option>
-                  <option value="NUMERICAL">NUMERICAL</option>
-                  <option value="THEOREM">THEOREM</option>
-                  <option value="EMPIRICAL">EMPIRICAL</option>
-                  <option value="AI-VERIFIED">AI-VERIFIED</option>
-                </select>
-              </div>
-            )}
-
-            {activeStory === 'formal-proof' && (
-              <div className="ads-prop-row">
-                <span>Environment</span>
-                <select
-                  value={formalVariant}
-                  onChange={(e) =>
-                    setFormalVariant(e.target.value as FormalVariant)
-                  }
-                  className="ads-btn-instrument"
-                >
-                  <option value="theorem">theorem</option>
-                  <option value="lemma">lemma</option>
-                  <option value="corollary">corollary</option>
-                  <option value="definition">definition</option>
-                  <option value="remark">remark</option>
-                </select>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Live SymbolRegistry Bus */}
-        <div
-          style={{
-            padding: '12px',
-            borderRadius: '6px',
-            backgroundColor: 'var(--ads-paper-plate, #FFFFFF)',
-            border: '1px solid var(--ads-ink-hairline)',
-          }}
-        >
-          <div className="ads-eyebrow-mono" style={{ color: 'var(--ads-accent-compute)', marginBottom: '8px' }}>
-            Coupled SymbolRegistry Bus
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-            {Object.values(symbols).map((sym) => {
-              const slot = SYMBOL_SLOT_COLORS[sym.slot];
-              const isAct = activeSymbolId === sym.id;
-              return (
-                <div
-                  key={sym.id}
-                  onMouseEnter={() => hoverSymbol(sym.id)}
-                  onMouseLeave={() => hoverSymbol(null)}
-                  onClick={() => togglePinSymbol(sym.id)}
-                  style={{
-                    padding: '5px 8px',
-                    borderRadius: '4px',
-                    backgroundColor: isAct ? slot.bg : 'var(--ads-paper-well)',
-                    border: `1px solid ${isAct ? slot.fg : slot.border}`,
-                    color: slot.fg,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                  }}
-                >
-                  <InlineMath latex={sym.latex} /> — {sym.name}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </aside>
     </div>
   );
 };

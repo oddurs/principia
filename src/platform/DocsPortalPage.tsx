@@ -6,14 +6,10 @@ import {
   Copy,
   Check,
   AlignJustify,
-  Pin,
 } from 'lucide-react';
 import {
   useAcademicSystem,
   SYMBOL_SLOT_COLORS,
-  ChromingMode,
-  DensityMode,
-  MaterialPreset,
 } from '../core/registry';
 import { DocPageId, StoryComponentId, PrototypeAppId } from './navigation';
 import { Pod } from '../primitives/pod/Pod';
@@ -101,20 +97,8 @@ export const DocsPortalPage: React.FC<DocsPortalPageProps> = ({
   activeDoc,
   onSelectDoc,
   onNavigateStory,
-  onNavigatePrototype,
 }) => {
   const {
-    symbols,
-    activeSymbolId,
-    pinnedSymbolId,
-    hoverSymbol,
-    togglePinSymbol,
-    chroming,
-    setChroming,
-    density,
-    setDensity,
-    material,
-    setMaterial,
     xrayBaseline,
     setXrayBaseline,
   } = useAcademicSystem();
@@ -138,7 +122,7 @@ export const DocsPortalPage: React.FC<DocsPortalPageProps> = ({
     <div
       style={{
         display: 'grid',
-        gridTemplateColumns: '240px minmax(0, 1fr) 268px',
+        gridTemplateColumns: '256px minmax(0, 1fr)',
         alignItems: 'start',
         minHeight: 'calc(100vh - 52px)',
       }}
@@ -977,7 +961,7 @@ export function App() {
               <button
                 type="button"
                 data-active="true"
-                onClick={() => onNavigateStory('pod')}
+                onClick={() => onNavigateStory('buttons-badges')}
                 className="ads-btn-instrument"
                 style={{ height: '28px', padding: '0 12px' }}
               >
@@ -988,170 +972,6 @@ export function App() {
           </div>
         </article>
       </main>
-
-      {/* ====================================================================
-          RIGHT RAIL: LIVE TOKEN & SYMBOL REGISTRY INSPECTOR
-          ==================================================================== */}
-      <aside
-        aria-label="Live Token & Symbol Inspector"
-        className="ads-ui"
-        style={{
-          position: 'sticky',
-          top: '44px',
-          padding: '18px 12px',
-          borderLeft: '1px solid var(--ads-ink-hairline, #E4E2DC)',
-          fontSize: '11.5px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '14px',
-        }}
-      >
-        {/* Live Axis Switcher */}
-        <div
-          style={{
-            padding: '10px 12px',
-            borderRadius: '6px',
-            backgroundColor: 'var(--ads-paper-plate, #FFFFFF)',
-            border: '1px solid var(--ads-ink-hairline)',
-          }}
-        >
-          <div className="ads-eyebrow-mono" style={{ marginBottom: '8px' }}>
-            Live System Axes
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <div className="ads-prop-row">
-              <span>Chroming</span>
-              <select
-                value={chroming}
-                onChange={(e) => setChroming(e.target.value as ChromingMode)}
-                className="ads-btn-instrument"
-              >
-                <option value="framed">framed</option>
-                <option value="seamless">seamless</option>
-                <option value="bracketed">bracketed</option>
-              </select>
-            </div>
-            <div className="ads-prop-row">
-              <span>Density</span>
-              <select
-                value={density}
-                onChange={(e) => setDensity(e.target.value as DensityMode)}
-                className="ads-btn-instrument"
-              >
-                <option value="manuscript">manuscript</option>
-                <option value="workbench">workbench</option>
-                <option value="compact">compact</option>
-              </select>
-            </div>
-            <div className="ads-prop-row">
-              <span>Material</span>
-              <select
-                value={material}
-                onChange={(e) => setMaterial(e.target.value as MaterialPreset)}
-                className="ads-btn-instrument"
-              >
-                <option value="archival-wolfram">archival</option>
-                <option value="swiss-lab">swiss-lab</option>
-                <option value="oxford-monograph">oxford-sepia</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Live SymbolRegistry Bus */}
-        <div
-          style={{
-            padding: '10px 12px',
-            borderRadius: '6px',
-            backgroundColor: 'var(--ads-paper-plate, #FFFFFF)',
-            border: '1px solid var(--ads-ink-hairline)',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '8px',
-            }}
-          >
-            <span className="ads-eyebrow-mono" style={{ color: 'var(--ads-accent-compute)' }}>
-              SymbolRegistry Bus
-            </span>
-            <span className="ads-badge-domain" style={{ height: '18px', fontSize: '9.5px' }}>
-              {activeSymbolId ? activeSymbolId : 'IDLE'}
-            </span>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-            {Object.values(symbols).map((sym) => {
-              const slot = SYMBOL_SLOT_COLORS[sym.slot];
-              const isAct = activeSymbolId === sym.id;
-              const isPin = pinnedSymbolId === sym.id;
-              return (
-                <div
-                  key={sym.id}
-                  onMouseEnter={() => hoverSymbol(sym.id)}
-                  onMouseLeave={() => hoverSymbol(null)}
-                  onClick={() => togglePinSymbol(sym.id)}
-                  style={{
-                    padding: '5px 8px',
-                    borderRadius: '4px',
-                    backgroundColor: isAct ? slot.bg : 'var(--ads-paper-well)',
-                    border: `1px solid ${isAct ? slot.fg : slot.border}`,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                  }}
-                >
-                  <span style={{ fontWeight: 600, color: slot.fg }}>
-                    <InlineMath latex={sym.latex} /> — {sym.name}
-                  </span>
-                  {isPin && <Pin size={10} color={slot.fg} />}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Prototype Quick Launcher */}
-        <div
-          style={{
-            padding: '10px 12px',
-            borderRadius: '6px',
-            backgroundColor: 'var(--ads-paper-plate, #FFFFFF)',
-            border: '1px solid var(--ads-ink-hairline)',
-          }}
-        >
-          <div className="ads-eyebrow-mono" style={{ marginBottom: '6px' }}>
-            Launch App Concept
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            {(
-              [
-                { id: 'agent-workflow', label: 'Nexus (Agentic Workflow)' },
-                { id: 'ai-evals', label: 'EvalBench (AI Observatory)' },
-                { id: 'quant-macro', label: 'Meridian (Quant Terminal)' },
-                { id: 'biomed-trials', label: 'Helix (Clinical BioMed)' },
-                { id: 'principia', label: 'Principia (Physics Lab)' },
-                { id: 'wolfram', label: 'The Codex (CAS / Monograph)' },
-              ] as const
-            ).map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => onNavigatePrototype(p.id)}
-                className="ads-nav-item"
-                style={{ height: '24px', fontSize: '11.5px' }}
-              >
-                <span>{p.label}</span>
-                <ArrowRight size={10} />
-              </button>
-            ))}
-          </div>
-        </div>
-      </aside>
     </div>
   );
 };

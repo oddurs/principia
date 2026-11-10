@@ -10,6 +10,7 @@ import {
 import {
   useAcademicSystem,
   SYMBOL_SLOT_COLORS,
+  ChromingMode,
 } from '../core/registry';
 import {
   PlatformRoute,
@@ -24,15 +25,64 @@ import {
 import { MarketingLandingPage } from './MarketingLandingPage';
 import { DocsPortalPage } from './DocsPortalPage';
 import { StorybookPage } from './StorybookPage';
-import { PrincipiaApp } from '../app/PrincipiaApp';
-import { CodexApp } from '../codex/CodexApp';
 import {
+  NexusAgentWorkflowPrototype,
   EvalBenchPrototype,
   MeridianQuantPrototype,
   HelixBioMedPrototype,
-  NexusAgentWorkflowPrototype,
+  PrincipiaPhysicsPrototype,
 } from '../prototypes/DomainPrototypes';
 import { InlineMath } from '../primitives/manuscript/MathAndFormal';
+
+export const APP_CONCEPTS_META: Array<{
+  id: PrototypeAppId;
+  num: string;
+  label: string;
+  shortLabel: string;
+  domain: string;
+  summary: string;
+}> = [
+  {
+    id: 'agent-workflow',
+    num: '01',
+    label: 'Nexus · Agentic Workflow',
+    shortLabel: 'Nexus (Agentic)',
+    domain: 'Autonomous Agents',
+    summary: 'Multi-agent DAG topology, MCP tool diffs, verifier traces & human approval gate',
+  },
+  {
+    id: 'ai-evals',
+    num: '02',
+    label: 'EvalBench · AI Observatory',
+    shortLabel: 'EvalBench (AI)',
+    domain: 'AI Engineering',
+    summary: 'Frontier LLM benchmarks, test-time compute Pareto & formal verifier telemetry',
+  },
+  {
+    id: 'quant-macro',
+    num: '03',
+    label: 'Meridian · Quant Terminal',
+    shortLabel: 'Meridian (Quant)',
+    domain: 'Macro Finance',
+    summary: 'Sovereign yield curve fitting, parallel rate shock scrubbers & CVaR ledger',
+  },
+  {
+    id: 'biomed-trials',
+    num: '04',
+    label: 'Helix · Clinical BioMed',
+    shortLabel: 'Helix (BioMed)',
+    domain: 'Biostatistics',
+    summary: 'Phase III Kaplan–Meier survival curves, Cox hazard ratios & subgroup cohorts',
+  },
+  {
+    id: 'principia',
+    num: '05',
+    label: 'Principia · Physics & CAS Lab',
+    shortLabel: 'Principia (Physics)',
+    domain: 'Scientific Computing',
+    summary: 'Coupled ODE phase portraits, symbolic Green’s functions, proofs & CAS notebook',
+  },
+];
 
 export const PlatformShell: React.FC = () => {
   const {
@@ -41,6 +91,8 @@ export const PlatformShell: React.FC = () => {
     pinnedSymbolId,
     hoverSymbol,
     togglePinSymbol,
+    chroming,
+    setChroming,
     density,
     material,
     voice,
@@ -92,7 +144,6 @@ export const PlatformShell: React.FC = () => {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
-  // Root CSS Custom Properties for Marketing, Docs & Storybook shells
   const dynamicRootVars: React.CSSProperties = {
     '--ads-title-size':
       density === 'manuscript' ? '34px' : density === 'workbench' ? '28px' : '24px',
@@ -151,171 +202,185 @@ export const PlatformShell: React.FC = () => {
 
   const CMD_DESTINATIONS: Array<{
     id: string;
-    category: 'Platform & Prototypes' | 'Documentation' | 'Storybook Components';
+    category: 'App Concepts (5)' | 'Component Storybook (17)' | 'Documentation (7)';
     label: string;
     detail: string;
     onTrigger: () => void;
   }> = [
-    {
-      id: 'nav-overview',
-      category: 'Platform & Prototypes',
-      label: 'Overview & Vision Landing Page',
-      detail: '#/overview',
-      onTrigger: () => navigate({ section: 'overview' }),
-    },
-    {
-      id: 'proto-ai-evals',
-      category: 'Platform & Prototypes',
-      label: 'Concept 1 · EvalBench — AI Model & Verifier Observatory',
-      detail: '#/prototypes/ai-evals',
-      onTrigger: () => navigate({ section: 'prototypes', prototypeId: 'ai-evals' }),
-    },
-    {
-      id: 'proto-quant-macro',
-      category: 'Platform & Prototypes',
-      label: 'Concept 2 · Meridian — Quant Macro & Risk Terminal',
-      detail: '#/prototypes/quant-macro',
-      onTrigger: () => navigate({ section: 'prototypes', prototypeId: 'quant-macro' }),
-    },
-    {
-      id: 'proto-biomed-trials',
-      category: 'Platform & Prototypes',
-      label: 'Concept 3 · Helix — Clinical Trials & Biostatistics',
-      detail: '#/prototypes/biomed-trials',
-      onTrigger: () => navigate({ section: 'prototypes', prototypeId: 'biomed-trials' }),
-    },
-    {
-      id: 'proto-principia',
-      category: 'Platform & Prototypes',
-      label: 'Concept 4 · Principia — Dynamical Systems & Physics Studio',
-      detail: '#/prototypes/principia',
-      onTrigger: () => navigate({ section: 'prototypes', prototypeId: 'principia' }),
-    },
-    {
-      id: 'proto-wolfram',
-      category: 'Platform & Prototypes',
-      label: 'Concept 5 · The Codex — Symbolic CAS, Monograph & Notebook',
-      detail: '#/prototypes/wolfram',
-      onTrigger: () => navigate({ section: 'prototypes', prototypeId: 'wolfram' }),
-    },
-    {
-      id: 'doc-start',
-      category: 'Documentation',
-      label: '01 · Architecture & Getting Started',
-      detail: '#/docs/getting-started',
-      onTrigger: () => navigate({ section: 'docs', docPage: 'getting-started' }),
-    },
-    {
-      id: 'doc-type',
-      category: 'Documentation',
-      label: '02 · Dual-Register Typography & Optical Scale',
-      detail: '#/docs/typography',
-      onTrigger: () => navigate({ section: 'docs', docPage: 'typography' }),
-    },
-    {
-      id: 'doc-color',
-      category: 'Documentation',
-      label: '03 · OKLCH Paper, Carbon Ink & Symbol Palette',
-      detail: '#/docs/colors-materiality',
-      onTrigger: () => navigate({ section: 'docs', docPage: 'colors-materiality' }),
-    },
-    {
-      id: 'doc-grid',
-      category: 'Documentation',
-      label: '04 · 4px Sub-Grid & Tactile Hardware Chrome',
-      detail: '#/docs/grid-hardware',
-      onTrigger: () => navigate({ section: 'docs', docPage: 'grid-hardware' }),
-    },
-    {
-      id: 'doc-math',
-      category: 'Documentation',
-      label: '05 · Mathematical & Formal Grammar',
-      detail: '#/docs/math-formal',
-      onTrigger: () => navigate({ section: 'docs', docPage: 'math-formal' }),
-    },
-    {
-      id: 'doc-vis',
-      category: 'Documentation',
-      label: '06 · Scientific DataVis & Booktabs Tables',
-      detail: '#/docs/datavis-booktabs',
-      onTrigger: () => navigate({ section: 'docs', docPage: 'datavis-booktabs' }),
-    },
+    ...APP_CONCEPTS_META.map((app) => ({
+      id: `proto-${app.id}`,
+      category: 'App Concepts (5)' as const,
+      label: `${app.num} · ${app.label} — ${app.domain}`,
+      detail: `#/prototypes/${app.id}`,
+      onTrigger: () => navigate({ section: 'prototypes', prototypeId: app.id }),
+    })),
     {
       id: 'story-buttons',
-      category: 'Storybook Components',
-      label: '01 · Buttons, Segments & Badges (Generalist Foundation)',
+      category: 'Component Storybook (17)',
+      label: '01 · Buttons, Segments & Badges',
       detail: '#/storybook/buttons-badges',
       onTrigger: () => navigate({ section: 'storybook', storyId: 'buttons-badges' }),
     },
     {
       id: 'story-forms',
-      category: 'Storybook Components',
+      category: 'Component Storybook (17)',
       label: '02 · Inputs, Selects & Form Controls',
       detail: '#/storybook/forms-inputs',
       onTrigger: () => navigate({ section: 'storybook', storyId: 'forms-inputs' }),
     },
     {
       id: 'story-cards',
-      category: 'Storybook Components',
+      category: 'Component Storybook (17)',
       label: '03 · Cards, Metrics, Callouts & Tabs',
       detail: '#/storybook/cards-surfaces',
       onTrigger: () => navigate({ section: 'storybook', storyId: 'cards-surfaces' }),
     },
     {
       id: 'story-datatable',
-      category: 'Storybook Components',
+      category: 'Component Storybook (17)',
       label: '04 · Universal DataTable (Any Dataset)',
       detail: '#/storybook/general-datatable',
       onTrigger: () => navigate({ section: 'storybook', storyId: 'general-datatable' }),
     },
     {
       id: 'story-pod',
-      category: 'Storybook Components',
-      label: '05 · Computational Pod — Universal Container',
+      category: 'Component Storybook (17)',
+      label: '05 · Computational Pod',
       detail: '#/storybook/pod',
       onTrigger: () => navigate({ section: 'storybook', storyId: 'pod' }),
     },
     {
       id: 'story-manip',
-      category: 'Storybook Components',
+      category: 'Component Storybook (17)',
       label: '06 · Manipulate & Vernier Scrubber',
       detail: '#/storybook/manipulate-scrubber',
       onTrigger: () => navigate({ section: 'storybook', storyId: 'manipulate-scrubber' }),
     },
     {
       id: 'story-eq',
-      category: 'Storybook Components',
-      label: '07 · Display Equations & Symbols (TeX & Typst)',
+      category: 'Component Storybook (17)',
+      label: '07 · Display Equations & Symbols',
       detail: '#/storybook/equation-block',
       onTrigger: () => navigate({ section: 'storybook', storyId: 'equation-block' }),
     },
     {
-      id: 'story-plot',
-      category: 'Storybook Components',
-      label: '11 · Scientific Plotting Suite — DataVis Engine',
-      detail: '#/storybook/scientific-plot',
-      onTrigger: () => navigate({ section: 'storybook', storyId: 'scientific-plot' }),
+      id: 'story-formal',
+      category: 'Component Storybook (17)',
+      label: '08 · Theorems & Formal Proofs',
+      detail: '#/storybook/formal-proof',
+      onTrigger: () => navigate({ section: 'storybook', storyId: 'formal-proof' }),
     },
     {
-      id: 'story-table',
-      category: 'Storybook Components',
-      label: '13 · Booktabs Publication Table',
-      detail: '#/storybook/booktabs-table',
-      onTrigger: () => navigate({ section: 'storybook', storyId: 'booktabs-table' }),
+      id: 'story-algo',
+      category: 'Component Storybook (17)',
+      label: '09 · Algorithmic Pseudocode',
+      detail: '#/storybook/algorithm-block',
+      onTrigger: () => navigate({ section: 'storybook', storyId: 'algorithm-block' }),
     },
     {
       id: 'story-cite',
-      category: 'Storybook Components',
+      category: 'Component Storybook (17)',
       label: '10 · Citations & Reference Lenses',
       detail: '#/storybook/citations-crossref',
       onTrigger: () => navigate({ section: 'storybook', storyId: 'citations-crossref' }),
     },
     {
+      id: 'story-plot',
+      category: 'Component Storybook (17)',
+      label: '11 · Scientific Plotting Suite',
+      detail: '#/storybook/scientific-plot',
+      onTrigger: () => navigate({ section: 'storybook', storyId: 'scientific-plot' }),
+    },
+    {
+      id: 'story-spark',
+      category: 'Component Storybook (17)',
+      label: '12 · Sparklines & Dimensional Units',
+      detail: '#/storybook/sparkline-unit',
+      onTrigger: () => navigate({ section: 'storybook', storyId: 'sparkline-unit' }),
+    },
+    {
+      id: 'story-table',
+      category: 'Component Storybook (17)',
+      label: '13 · Booktabs Publication Table',
+      detail: '#/storybook/booktabs-table',
+      onTrigger: () => navigate({ section: 'storybook', storyId: 'booktabs-table' }),
+    },
+    {
+      id: 'story-omni',
+      category: 'Component Storybook (17)',
+      label: '14 · Symbolic Compute OmniBar',
+      detail: '#/storybook/omni-compute-bar',
+      onTrigger: () => navigate({ section: 'storybook', storyId: 'omni-compute-bar' }),
+    },
+    {
       id: 'story-code',
-      category: 'Storybook Components',
-      label: '15 · Notebook Code Cell & AI Copilot',
+      category: 'Component Storybook (17)',
+      label: '15 · Notebook Code Cell',
       detail: '#/storybook/code-cell',
       onTrigger: () => navigate({ section: 'storybook', storyId: 'code-cell' }),
+    },
+    {
+      id: 'story-ai',
+      category: 'Component Storybook (17)',
+      label: '16 · Grounded AI Copilot',
+      detail: '#/storybook/grounded-ai',
+      onTrigger: () => navigate({ section: 'storybook', storyId: 'grounded-ai' }),
+    },
+    {
+      id: 'story-agentic',
+      category: 'Component Storybook (17)',
+      label: '17 · Agentic Workflow & Orchestration',
+      detail: '#/storybook/agentic-workflow',
+      onTrigger: () => navigate({ section: 'storybook', storyId: 'agentic-workflow' }),
+    },
+    {
+      id: 'doc-start',
+      category: 'Documentation (7)',
+      label: '01 · Architecture & Getting Started',
+      detail: '#/docs/getting-started',
+      onTrigger: () => navigate({ section: 'docs', docPage: 'getting-started' }),
+    },
+    {
+      id: 'doc-type',
+      category: 'Documentation (7)',
+      label: '02 · Dual-Register Typography & Scale',
+      detail: '#/docs/typography',
+      onTrigger: () => navigate({ section: 'docs', docPage: 'typography' }),
+    },
+    {
+      id: 'doc-color',
+      category: 'Documentation (7)',
+      label: '03 · OKLCH Paper, Ink & Symbol Palette',
+      detail: '#/docs/colors-materiality',
+      onTrigger: () => navigate({ section: 'docs', docPage: 'colors-materiality' }),
+    },
+    {
+      id: 'doc-grid',
+      category: 'Documentation (7)',
+      label: '04 · 4px Sub-Grid & Tactile Hardware',
+      detail: '#/docs/grid-hardware',
+      onTrigger: () => navigate({ section: 'docs', docPage: 'grid-hardware' }),
+    },
+    {
+      id: 'doc-math',
+      category: 'Documentation (7)',
+      label: '05 · Mathematical & Formal Grammar',
+      detail: '#/docs/math-formal',
+      onTrigger: () => navigate({ section: 'docs', docPage: 'math-formal' }),
+    },
+    {
+      id: 'doc-vis',
+      category: 'Documentation (7)',
+      label: '06 · Scientific DataVis & Booktabs',
+      detail: '#/docs/datavis-booktabs',
+      onTrigger: () => navigate({ section: 'docs', docPage: 'datavis-booktabs' }),
+    },
+    {
+      id: 'doc-bus',
+      category: 'Documentation (7)',
+      label: '07 · L2 Symbol & Document Registry Bus',
+      detail: '#/docs/symbol-bus',
+      onTrigger: () => navigate({ section: 'docs', docPage: 'symbol-bus' }),
     },
   ];
 
@@ -363,13 +428,13 @@ export const PlatformShell: React.FC = () => {
           justifyContent: 'space-between',
           gap: '16px',
           padding: '0 24px',
-          backgroundColor: 'oklch(1 0 0 / 0.95)',
+          backgroundColor: 'oklch(1 0 0 / 0.96)',
           backdropFilter: 'blur(12px)',
           borderBottom: '1px solid var(--ads-ink-hairline, #E4E2DC)',
           fontSize: '12.5px',
         }}
       >
-        {/* Left: Brand Crest & Version */}
+        {/* Left: Brand Crest & Package Name */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <button
             type="button"
@@ -393,7 +458,7 @@ export const PlatformShell: React.FC = () => {
               height={18}
               style={{ display: 'block', userSelect: 'none' }}
             />
-            <span style={{ fontWeight: 700, fontSize: '14px', letterSpacing: '-0.015em' }}>
+            <span style={{ fontWeight: 700, fontSize: '14.5px', letterSpacing: '-0.015em' }}>
               Principia
             </span>
             <span
@@ -406,13 +471,9 @@ export const PlatformShell: React.FC = () => {
               @principia/core
             </span>
           </button>
-
-          <span className="ads-badge-domain" style={{ height: '20px', fontSize: '10px' }}>
-            v2.4
-          </span>
         </div>
 
-        {/* Center: Primary 4-Destination Platform Switcher */}
+        {/* Center: Primary 4-Section Switcher (Logical Learning Order) */}
         <div
           role="tablist"
           aria-label="Platform Sections"
@@ -427,19 +488,19 @@ export const PlatformShell: React.FC = () => {
                 icon: <Compass size={12} />,
               },
               {
-                id: 'docs' as PlatformSection,
-                label: 'Documentation',
-                icon: <BookOpen size={12} />,
-              },
-              {
                 id: 'storybook' as PlatformSection,
-                label: 'Storybook (17)',
+                label: 'Components (17)',
                 icon: <Layers size={12} />,
               },
               {
                 id: 'prototypes' as PlatformSection,
-                label: 'App Concepts (6)',
+                label: 'App Concepts (5)',
                 icon: <Cpu size={12} />,
+              },
+              {
+                id: 'docs' as PlatformSection,
+                label: 'Documentation (7)',
+                icon: <BookOpen size={12} />,
               },
             ] as const
           ).map((tab) => {
@@ -453,7 +514,7 @@ export const PlatformShell: React.FC = () => {
                 data-active={active ? 'true' : 'false'}
                 className="ads-pill-btn"
                 onClick={() => navigate({ section: tab.id })}
-                style={{ height: '24px', padding: '0 12px', fontSize: '12px' }}
+                style={{ height: '24px', padding: '0 13px', fontSize: '12px' }}
               >
                 {tab.icon}
                 <span>{tab.label}</span>
@@ -462,43 +523,26 @@ export const PlatformShell: React.FC = () => {
           })}
         </div>
 
-        {/* Right: Prototype Sub-Switcher + 1rlh Laser + Global ⌘K Omnisearch */}
+        {/* Right: Global Surface Chroming + 1rlh Baseline + ⌘K Search */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {/* Instant Prototype Switcher when inside Prototypes */}
-          {route.section === 'prototypes' && (
-            <div className="ads-pill-group" style={{ height: '30px', padding: '2.5px' }}>
-              {(
-                [
-                  { id: 'ai-evals' as PrototypeAppId, label: 'EvalBench (AI)' },
-                  { id: 'quant-macro' as PrototypeAppId, label: 'Meridian (Quant)' },
-                  { id: 'biomed-trials' as PrototypeAppId, label: 'Helix (BioMed)' },
-                  { id: 'agent-workflow' as PrototypeAppId, label: 'Nexus (Agentic)' },
-                  { id: 'principia' as PrototypeAppId, label: 'Principia (Physics)' },
-                  { id: 'wolfram' as PrototypeAppId, label: 'Codex (CAS/IDE)' },
-                ] as const
-              ).map((p) => {
-                const isSelected =
-                  route.prototypeId === p.id ||
-                  (p.id === 'wolfram' &&
-                    (route.prototypeId === 'monograph' ||
-                      route.prototypeId === 'notebook'));
-                return (
-                  <button
-                    key={p.id}
-                    type="button"
-                    data-active={isSelected ? 'true' : 'false'}
-                    className="ads-pill-btn"
-                    onClick={() =>
-                      navigate({ section: 'prototypes', prototypeId: p.id })
-                    }
-                    style={{ height: '23px', fontSize: '11.5px', padding: '0 9px' }}
-                  >
-                    {p.label}
-                  </button>
-                );
-              })}
-            </div>
-          )}
+          <div
+            className="ads-pill-group"
+            title="Global Pod Surface Chroming Mode"
+            style={{ height: '28px', padding: '2px' }}
+          >
+            {(['framed', 'seamless', 'bracketed'] as const).map((c) => (
+              <button
+                key={c}
+                type="button"
+                data-active={chroming === c ? 'true' : 'false'}
+                className="ads-pill-btn"
+                onClick={() => setChroming(c as ChromingMode)}
+                style={{ height: '22px', fontSize: '11px', padding: '0 8px' }}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
 
           <button
             type="button"
@@ -520,13 +564,91 @@ export const PlatformShell: React.FC = () => {
             title="Open Global Omnisearch & Symbol Palette (⌘K)"
           >
             <Search size={12} />
-            <span style={{ color: 'var(--ads-ink-pencil)' }}>Omnisearch</span>
+            <span style={{ color: 'var(--ads-ink-pencil)' }}>Search</span>
             <span className="ads-kbd" style={{ height: '17px', fontSize: '10px' }}>
               ⌘K
             </span>
           </button>
         </div>
       </nav>
+
+      {/* ====================================================================
+          DEDICATED APP CONCEPTS SWITCHER STRIP (ONLY WHEN IN APP CONCEPTS)
+          ==================================================================== */}
+      {route.section === 'prototypes' && (
+        <div
+          className="ads-no-print ads-ui"
+          style={{
+            backgroundColor: 'var(--ads-paper-well, #F7F5F0)',
+            borderBottom: '1px solid var(--ads-ink-hairline, #E4E2DC)',
+            padding: '8px 24px',
+          }}
+        >
+          <div
+            style={{
+              maxWidth: '1320px',
+              margin: '0 auto',
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+              <span
+                style={{
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                  color: 'var(--ads-ink-pencil)',
+                  marginRight: '4px',
+                }}
+              >
+                App Concept:
+              </span>
+              {APP_CONCEPTS_META.map((app) => {
+                const isSelected = route.prototypeId === app.id;
+                return (
+                  <button
+                    key={app.id}
+                    type="button"
+                    data-active={isSelected ? 'true' : 'false'}
+                    onClick={() =>
+                      navigate({ section: 'prototypes', prototypeId: app.id })
+                    }
+                    className="ads-btn-instrument"
+                    style={{
+                      height: '28px',
+                      padding: '0 11px',
+                      fontSize: '12px',
+                      fontWeight: isSelected ? 600 : 500,
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontFamily: 'var(--ads-font-mono)',
+                        fontSize: '10.5px',
+                        opacity: 0.75,
+                      }}
+                    >
+                      {app.num}
+                    </span>
+                    <span>{app.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <span style={{ fontSize: '11.5px', color: 'var(--ads-ink-graphite)' }}>
+              {
+                APP_CONCEPTS_META.find((a) => a.id === route.prototypeId)?.summary
+              }
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* ====================================================================
           ACTIVE PLATFORM WORKSPACE DESTINATION
@@ -572,52 +694,11 @@ export const PlatformShell: React.FC = () => {
 
         {route.section === 'prototypes' && (
           <>
-            {route.prototypeId === 'ai-evals' && <EvalBenchPrototype />}
-
-            {route.prototypeId === 'quant-macro' && <MeridianQuantPrototype />}
-
-            {route.prototypeId === 'biomed-trials' && <HelixBioMedPrototype />}
-
             {route.prototypeId === 'agent-workflow' && <NexusAgentWorkflowPrototype />}
-
-            {route.prototypeId === 'principia' && (
-              <PrincipiaApp
-                embeddedInPlatform
-                onOpenCodexStorybook={() =>
-                  navigate({ section: 'storybook', storyId: 'buttons-badges' })
-                }
-              />
-            )}
-
-            {route.prototypeId === 'wolfram' && (
-              <CodexApp
-                embeddedInPlatform
-                initialArchetype="wolfram-engine"
-                onBackToPrincipia={() =>
-                  navigate({ section: 'prototypes', prototypeId: 'principia' })
-                }
-              />
-            )}
-
-            {route.prototypeId === 'monograph' && (
-              <CodexApp
-                embeddedInPlatform
-                initialArchetype="latex-monograph"
-                onBackToPrincipia={() =>
-                  navigate({ section: 'prototypes', prototypeId: 'principia' })
-                }
-              />
-            )}
-
-            {route.prototypeId === 'notebook' && (
-              <CodexApp
-                embeddedInPlatform
-                initialArchetype="notebook-ide"
-                onBackToPrincipia={() =>
-                  navigate({ section: 'prototypes', prototypeId: 'principia' })
-                }
-              />
-            )}
+            {route.prototypeId === 'ai-evals' && <EvalBenchPrototype />}
+            {route.prototypeId === 'quant-macro' && <MeridianQuantPrototype />}
+            {route.prototypeId === 'biomed-trials' && <HelixBioMedPrototype />}
+            {route.prototypeId === 'principia' && <PrincipiaPhysicsPrototype />}
           </>
         )}
       </div>
@@ -667,7 +748,7 @@ export const PlatformShell: React.FC = () => {
                 autoFocus
                 value={cmdQuery}
                 onChange={(e) => setCmdQuery(e.target.value)}
-                placeholder="Jump to Overview, Docs, Storybook, Prototypes, or filter mathematical symbols (ζ, ω₀, ℋ)..."
+                placeholder="Jump to Components (17), App Concepts (5), Docs (7), or filter symbols (ζ, ω₀)..."
                 style={{
                   flex: 1,
                   border: 'none',
@@ -698,11 +779,51 @@ export const PlatformShell: React.FC = () => {
                 gap: '14px',
               }}
             >
-              {/* 1. Mathematical Symbols */}
+              {/* 1. Platform Destinations by Category */}
+              {(
+                [
+                  'App Concepts (5)',
+                  'Component Storybook (17)',
+                  'Documentation (7)',
+                ] as const
+              ).map((cat) => {
+                const items = filteredDestinations.filter((d) => d.category === cat);
+                if (items.length === 0) return null;
+                return (
+                  <div key={cat}>
+                    <div className="ads-section-label" style={{ padding: '0 6px', marginBottom: '4px' }}>
+                      {cat}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      {items.map((dest) => (
+                        <button
+                          key={dest.id}
+                          type="button"
+                          onClick={() => {
+                            dest.onTrigger();
+                            setCmdOpen(false);
+                          }}
+                          className="ads-nav-item"
+                          style={{ height: '30px', padding: '0 10px' }}
+                        >
+                          <span style={{ fontWeight: 500, color: 'var(--ads-ink-carbon)' }}>
+                            {dest.label}
+                          </span>
+                          <code className="ads-inline-code" style={{ fontSize: '10px' }}>
+                            {dest.detail}
+                          </code>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* 2. Mathematical Symbols */}
               {filteredSymbols.length > 0 && (
                 <div>
                   <div className="ads-section-label" style={{ padding: '0 6px', marginBottom: '4px' }}>
-                    L2 Mathematical Symbols (Hover to Highlight · Click to Pin)
+                    L2 Mathematical Symbols (Click to Pin Highlight)
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                     {filteredSymbols.map((sym) => {
@@ -753,46 +874,6 @@ export const PlatformShell: React.FC = () => {
                   </div>
                 </div>
               )}
-
-              {/* 2. Platform Destinations by Category */}
-              {(
-                [
-                  'Platform & Prototypes',
-                  'Documentation',
-                  'Storybook Components',
-                ] as const
-              ).map((cat) => {
-                const items = filteredDestinations.filter((d) => d.category === cat);
-                if (items.length === 0) return null;
-                return (
-                  <div key={cat}>
-                    <div className="ads-section-label" style={{ padding: '0 6px', marginBottom: '4px' }}>
-                      {cat}
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                      {items.map((dest) => (
-                        <button
-                          key={dest.id}
-                          type="button"
-                          onClick={() => {
-                            dest.onTrigger();
-                            setCmdOpen(false);
-                          }}
-                          className="ads-nav-item"
-                          style={{ height: '30px', padding: '0 10px' }}
-                        >
-                          <span style={{ fontWeight: 500, color: 'var(--ads-ink-carbon)' }}>
-                            {dest.label}
-                          </span>
-                          <code className="ads-inline-code" style={{ fontSize: '10px' }}>
-                            {dest.detail}
-                          </code>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
             </div>
           </div>
         </div>
