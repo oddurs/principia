@@ -1,0 +1,46 @@
+{
+  "name": "@principia/core",
+  "version": "2.4.0",
+  "license": "MIT",
+  "type": "module",
+  "description": "Principia — Universal Editorial & Scientific Design System combining LaTeX typography, Wolfram computable pods, Tufte analytical graphics, and Linear-grade tactile instrument controls.",
+  "homepage": "https://github.com/oddurs/principia",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/oddurs/principia.git"
+  },
+  "keywords": [
+    "design-system",
+    "react",
+    "latex",
+    "katex",
+    "scientific-computing",
+    "tufte",
+    "datavis",
+    "booktabs",
+    "ui-components",
+    "typescript"
+  ],
+  "scripts": {
+    "dev": "vite --host",
+    "build": "tsc -b && vite build",
+    "start": "bun run server.ts",
+    "serve": "bun run build && bun run server.ts",
+    "preview": "vite preview --host"
+  },
+  "dependencies": {
+    "@stylexjs/stylex": "^0.11.1",
+    "katex": "^0.16.21",
+    "lucide-react": "^0.475.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/katex": "^0.16.7",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "~5.7.3",
+    "vite": "^6.1.0"
+  }
+}
